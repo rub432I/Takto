@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AXIOM // Adaptive Geometric System</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#020305;color:#df9e38;font-family:"JetBrains Mono","SF Mono","Fira Code",monospace}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at center,transparent 62%,rgba(0,0,0,.85) 100%)}
+.hud{display:none;position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px))}
+.top{display:flex;flex-direction:column;gap:4px}
+.badge{font-size:10px;letter-spacing:.2em;color:#8c6020}
+.state{font-size:15px;font-weight:700;letter-spacing:.1em;color:#ffc86b;text-shadow:0 0 14px rgba(255,175,50,.4)}
+.motto{font-size:10px;letter-spacing:.12em;color:#6d542d}
+.bot{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.pill{pointer-events:auto;background:rgba(8,10,14,.92);border:1px solid rgba(223,158,56,.3);padding:8px 12px;border-radius:4px;font-size:10px;letter-spacing:.12em;color:#df9e38;cursor:pointer}
+.dbg{pointer-events:auto;cursor:pointer;font-size:9px;letter-spacing:.12em;color:#8c6020;text-align:right;line-height:1.5}
+
+/* TAKTO TRANSLUCENT GLASS CARD OVERLAY */
+.takto-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  pointer-events: none;
+  z-index: 10;
+}
+.takto-card {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 720px;
+  max-height: 92vh;
+  overflow-y: auto;
+  background: rgba(8, 10, 14, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(223, 158, 56, 0.4);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 32px rgba(223, 158, 56, 0.15);
+  border-radius: 12px;
+  padding: 28px;
+  color: #e6e6e6;
+  font-family: "JetBrains Mono", "SF Mono", monospace, sans-serif;
+  scrollbar-width: thin;
+  scrollbar-color: #df9e38 transparent;
+}
+.takto-card::-webkit-scrollbar { width: 4px; }
+.takto-card::-webkit-scrollbar-thumb { background: #df9e38; border-radius: 2px; }
+
+.header {
+  border-bottom: 1px solid rgba(223, 158, 56, 0.25);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+.logo-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.logo {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: #ffc86b;
+  text-shadow: 0 0 18px rgba(255, 175, 50, 0.5);
+}
+.tagline {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: #df9e38;
+  margin-top: 4px;
+}
+.badge-foss {
+  display: inline-block;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  padding: 4px 10px;
+  background: rgba(223, 158, 56, 0.15);
+  border: 1px solid rgba(223, 158, 56, 0.6);
+  color: #ffc86b;
+  border-radius: 4px;
+}
+.manifesto {
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: #b0b0b0;
+  margin-bottom: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 12px;
+  border-left: 2px solid #df9e38;
+  border-radius: 2px;
+}
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.col-card {
+  background: rgba(14, 18, 24, 0.88);
+  border: 1px solid rgba(223, 158, 56, 0.25);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+.col-card h4 {
+  font-size: 11px;
+  color: #ffc86b;
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+}
+.col-card p {
+  font-size: 10px;
+  line-height: 1.45;
+  color: #9c9c9c;
+}
+.code-inline {
+  background: rgba(223, 158, 56, 0.15);
+  color: #ffc86b;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 9.5px;
+}
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.btn-primary {
+  background: #df9e38;
+  color: #020305;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  padding: 10px 18px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+  display: inline-block;
+}
+.btn-primary:hover {
+  background: #ffc86b;
+  box-shadow: 0 0 16px rgba(255, 200, 107, 0.5);
+}
+.btn-sec {
+  background: transparent;
+  color: #df9e38;
+  border: 1px solid rgba(223, 158, 56, 0.45);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  padding: 10px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.2s;
+}
+.btn-sec:hover {
+  background: rgba(223, 158, 56, 0.15);
+  color: #ffc86b;
+}
+.footer-meta {
+  font-size: 9px;
+  color: #777;
+  margin-top: 18px;
+  letter-spacing: 0.1em;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid rgba(223, 158, 56, 0.15);
+  padding-top: 12px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="takto-overlay">
+  <div class="takto-card">
+    <div class="header">
+      <div class="logo-row">
+        <div>
+          <div class="logo">TAKTO</div>
+          <div class="tagline">MINIMALIST // OFFLINE-FIRST // OS FOR LIFE</div>
+        </div>
+        <span class="badge-foss">F-DROID COMPLIANT · 0 TELEMETRY</span>
+      </div>
+    </div>
+    
+    <div class="manifesto">
+      Built on an <strong>"OS for Life"</strong> philosophy where the daily journal serves as the central operating system. Routes every thought, task, and expense directly into today's <strong>Logseq Markdown file</strong> via SAF while simultaneously dual-writing to local <strong>Room SQLite (AppDatabase)</strong> for sub-millisecond queries. Background syncing via Syncthing/rclone over Wi-Fi.
+    </div>
+
+    <div class="grid-3">
+      <div class="col-card">
+        <h4>01 // METRO DASHBOARD</h4>
+        <p>Windows Phone-inspired 4-column live grid: Hydration tracker, local clock, offline pass wallet, CameraX/ZXing QR, and 4x2 LogseqTaskTile.</p>
+      </div>
+      <div class="col-card">
+        <h4>02 // INTERNAL THREAD</h4>
+        <p>Reverse-scrolling SMS-style self-chat canvas. Solves classification paralysis by capturing thoughts immediately into the day stream.</p>
+      </div>
+      <div class="col-card">
+        <h4>03 // UNIFIED COMM HUB</h4>
+        <p>Isolated communication hub using offline NotificationListenerService and normalized identities to separate social stress from capture.</p>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="col-card">
+        <h4>DUAL-PATH INTELLIGENCE</h4>
+        <p>Instant single-character Logseq prefixes (<span class="code-inline">j </span> journal, <span class="code-inline">t </span> task, <span class="code-inline">$ </span> expense) paired with optional home-server AI (Whisper.cpp/Ollama/RAG) over Tailscale.</p>
+      </div>
+      <div class="col-card">
+        <h4>QUAKE TERMINAL OVERLAY</h4>
+        <p>Two-finger pull-down <span class="code-inline">QuakeConsole</span> wired to <span class="code-inline">takto-cli</span>, 3-tier escalating privilege router (libsu UID 0 / Shizuku UID 2000 / shell fallback), and AVF Microdroid Linux VMs.</p>
+      </div>
+      <div class="col-card">
+        <h4>PERFORMANCE ON 80s HW</h4>
+        <p>100% Native Kotlin + Jetpack Compose with Rust core via UniFFI. Zero React Native bloat. &lt;45MB RAM footprint, instant cold-start, 120Hz fluid rendering.</p>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <a href="https://f-droid.org" class="btn-primary">DOWNLOAD APK / F-DROID</a>
+      <a href="https://github.com/takto-launcher/takto" class="btn-sec">SOURCE CODE</a>
+      <a href="./docs/SPEC.html" class="btn-sec">ARCHITECTURE SPEC</a>
+    </div>
+
+    <div class="footer-meta">
+      <span>NEOCITIES STATIC DEPLOYMENT · ZERO TRACKERS · 100% AUDITABLE</span>
+      <span>AXIOM GEOMETRIC CANVAS v3.0</span>
+    </div>
+  </div>
+</div>
+
+<canvas id="c"></canvas>
+<div class="vig"></div>
+<pre id="dbgp" style="position:absolute;top:100px;left:18px;font-size:10px;color:#b98a3e;display:none;pointer-events:none;line-height:1.5"></pre>
+<div class="hud" style="display:none!important">
+  <div class="top">
+    <span class="badge" id="badge" style="pointer-events:auto;cursor:pointer">AXIOM // GEOMETRIC SYSTEM // FOSS TERMINAL</span>
+    <div class="state" id="st">GALAXY</div>
+    <span class="motto">STABLE PRINCIPLES. ADAPTABLE FORM. // SYSTEM ONLINE</span>
+  </div>
+  <div class="bot">
+    <div class="pill" id="pill">AUTO · tap: next state · drag: rotate · pinch: zoom</div>
+    <div class="dbg" id="dbg">POINTS <span id="cnt">0</span><br>ZOOM <span id="zm">1.0</span>× · tap: reset view</div>
+  </div>
+</div>
+<script>
+(function(){
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+let W,H,DPR=Math.min(window.devicePixelRatio||1,2);
+function resize(){W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0)}
+addEventListener('resize',resize);resize();
+
+/* ---------- seeded rng + vector helpers ---------- */
+function mb(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const R=mb(1337),clamp=(v,a,b)=>Math.min(b,Math.max(a,v)),sm=t=>t*t*(3-2*t);
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]],sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],mul=(a,k)=>[a[0]*k,a[1]*k,a[2]*k];
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const norm=a=>{const l=Math.hypot(a[0],a[1],a[2])||1;return[a[0]/l,a[1]/l,a[2]/l]};
+const lerp=(a,b,t)=>add(mul(a,1-t),mul(b,t));
+const jit=(p,k)=>[p[0]+(R()-.5)*k,p[1]+(R()-.5)*k,p[2]+(R()-.5)*k];
+
+/* ---------- primitives ---------- */
+let OUT=[],curW=0;
+const put=(g,t,b)=>OUT.push({g:g,t:t,b:b||1,w:curW});
+function spl(q){const n=q.length-1;return t=>{t=clamp(t,0,1);const f=t*n,i=Math.min(Math.floor(f),n-1),u=f-i,a=q[Math.max(i-1,0)],b=q[i],c=q[i+1],d=q[Math.min(i+2,n)];return[0,1,2].map(k=>.5*(2*b[k]+(c[k]-a[k])*u+(2*a[k]-5*b[k]+4*c[k]-d[k])*u*u+(3*b[k]-a[k]-3*c[k]+d[k])*u*u*u))}}
+function frame(sp,t,ref){const a=sp(t-.01),b=sp(t+.01),T=norm(sub(b,a));ref=ref||[0,0,1];if(Math.abs(dot(ref,T))>.9)ref=[1,0,0];const N=norm(sub(ref,mul(T,dot(ref,T))));return[sp(t),T,N,cross(T,N)]}
+function tube(sp,rad,n,g,o){o=o||{};for(let i=0;i<n;i++){let t=R(),rg=0;if(o.rings&&R()<.4){t=Math.round(t*o.rings)/o.rings;rg=1}
+const fr=frame(sp,t,o.ref),a=R()*6.2832,r=rad(t)*(1-.2*R()),f=o.flat||1;
+put(g,add(fr[0],add(mul(fr[2],Math.cos(a)*r*f),mul(fr[3],Math.sin(a)*r))),rg?1.35:1)}}
+const tuck=a=>1-.32*Math.max(0,-Math.cos(a));
+function ring(sp,t,r,n,g){const fr=frame(sp,t,REF);for(let j=0;j<n;j++){const a=6.2832*j/n,k=r*tuck(a);put(g,add(fr[0],add(mul(fr[2],Math.cos(a)*k*.88),mul(fr[3],Math.sin(a)*k))),1.3)}}
+function spikes(sp,t0,t1,n,rad,h,g,ref){for(let k=0;k<n;k++){const t=t0+(t1-t0)*k/Math.max(1,n-1),fr=frame(sp,t,ref),hh=h(t),sd=k%2?1:-1,base=add(fr[0],mul(fr[2],rad(t)*.85));
+for(let j=0;j<4;j++){const f=j/3;put(g,add(base,add(mul(fr[2],hh*f),mul(fr[3],sd*hh*f*.3))),.8+.6*f)}}}
+let shn=0;function shard(p,s){const g=++shn%7==3?'CYAN':shn%11==5?'VIOLET':'MECH';[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(v=>put(g,add(p,mul(v,s)),1.4))}
+
+/* ---------- long serpentine spine: head -> tail, three-bend S ---------- */
+const SP=spl([[-6,-60,8],[-26,-44,6],[-34,-22,2],[-16,-4,0],[16,8,0],[38,26,4],[40,48,10],[18,62,18],[-14,66,26],[-40,78,34],[-50,98,44],[-30,112,56],[0,112,66],[22,100,76],[30,84,84]]);
+const REF=norm([0,-.6,.8]);
+const rad=t=>t<.14?5+t*25:t<.22?8.5+(t-.14)*43.75:t<.3?12-(t-.22)*12.5:11*Math.pow(Math.max(0,1-(t-.3)/.7),1.2)+.3;
+function scales(t0,t1,n,g){let len=0,ra=0;for(let i=0;i<20;i++){const a=t0+(t1-t0)*i/20,b=t0+(t1-t0)*(i+1)/20;len+=Math.hypot(...sub(SP(b),SP(a)));ra+=rad(a)}ra/=20;
+ const sp_=Math.sqrt(5.2*ra*len/n),rows=Math.max(4,Math.round(len/sp_));
+ for(let j=0;j<rows;j++){const t=t0+(t1-t0)*j/rows,r=rad(t),cols=Math.max(3,Math.round(5.2*r/sp_)),fr=frame(SP,t,REF);
+  const at=(a,k,b,g2)=>{const q=r*k*tuck(a);put(g2||g,add(fr[0],add(mul(fr[2],Math.cos(a)*q*.86),mul(fr[3],Math.sin(a)*q))),b)};
+  for(let c=0;c<cols;c++)at((c+(j&1)*.5)/cols*6.2832+(R()-.5)*.1,1,1);
+  at(0,1.04,1.45,'SPINES');at(1.5708,1.02,1.3,'EDGE');at(-1.5708,1.02,1.3,'EDGE');
+  if(j%2==0){at(3.1416-.35,1,1.1);at(3.1416,1,1.1);at(3.1416+.35,1,1.1)}
+  if(j%3==0)at(R()*6.28,.4,.5,'DEEP')}}
+
+/* ---------- head: large anatomical skull (scale hs) ---------- */
+const hs=1.5,H0=[-10,-72,6],F=norm([-.296,.12,-.955]);
+const U=norm(sub([0,-1,0],mul(F,dot([0,-1,0],F)))),Rt=cross(F,U);
+const L=(a,b,c)=>add(H0,mul(add(mul(F,a),add(mul(U,b),mul(Rt,c))),hs));
+const TB=(q,r,n,g,o)=>tube(spl(q),t=>r(t)*hs,n,g,o);
+const eyes=[1,-1].map(s=>L(9,4,s*8.5));
+for(let i=0;i<400;i++){const u=R()*2-1,th=R()*6.2832,q=Math.sqrt(1-u*u),p=L(q*Math.cos(th)*14,u*11,q*Math.sin(th)*10.5);
+ if(eyes.some(e=>Math.hypot(p[0]-e[0],p[1]-e[1],p[2]-e[2])<4.4*hs)){i--;continue}put('SKULL',p,1+.2*(u>.5))}
+[1,-1].forEach(s=>{
+ for(let j=0;j<26;j++)put('EYES',jit(L(8,3.5,s*7),1.1*hs),1.4);for(let j=0;j<4;j++)put('CRIMSON',jit(L(8,3.5,s*7),.4*hs),1.6);
+ TB([L(14,7,s*3),L(8,10,s*9),L(-2,8.5,s*10)],t=>2.5-.8*t,40,'SKULL',{rings:6});
+ TB([L(10,5,s*6),L(5,2,s*9.5),L(-1,-2,s*10.5)],t=>1.2,16,'SKULL');
+ const hq=[L(-2,9,s*7),L(-12,17,s*12),L(-28,24,s*16),L(-48,30,s*17)],hsp=spl(hq);
+ TB(hq,t=>2.8*(1-t)+.3,50,'HORNS',{rings:7});
+ spikes(hsp,.15,.85,6,t=>(2.8*(1-t)+.3)*hs,t=>3*hs*(1-t),'HORNS');
+ const b0=hsp(.3),b1=add(b0,mul(add(add(mul(F,-16),mul(U,20)),mul(Rt,s*9)),hs));
+ tube(spl([b0,add(lerp(b0,b1,.5),mul(U,3)),b1]),t=>(1.6*(1-t)+.2)*hs,25,'HORNS',{rings:4});
+ TB([L(0,-2,s*10),L(-10,-6,s*17),L(-22,-3,s*20)],t=>1.8*(1-t)+.3,22,'HORNS');
+ TB([L(38,-2,s*5),L(30,-12,s*14),L(12,-26,s*24),L(-8,-32,s*32),L(-26,-26,s*38)],t=>.5,24,'WHISKER');
+ TB([L(34,-4,s*4),L(22,-14,s*10),L(6,-26,s*14),L(-10,-34,s*16)],t=>.4,18,'WHISKER');
+ for(let k=0;k<3;k++)for(let j=0;j<14;j++)put('SKULL',add(L(-4+k*5,-2-k*1.5,s*(12.5-k)),mul(add(mul(F,(R()-.5)*7),mul(U,(R()-.5)*5)),hs)),1.1);
+ for(let j=0;j<10;j++)put('SKULL',jit(L(2,-4,s*9),2*hs),1.5);
+ for(let j=0;j<8;j++)put('SKULL',jit(L(44,-1.5,s*2.4),2.5),1.4);
+ for(let k=0;k<10;k++){const a=14+k*3,t=(a-10)/34,rr=8.5-4.8*t,b=-3*t-.65*rr+.5,len=(k==2?5.5:3.2)-t;
+  for(let j=0;j<4;j++)put('TEETH',L(a,b-len*j/3,s*rr*.85),1.2)}
+ for(let k=0;k<8;k++){const a=12+k*3.8,u=(a-4)/36,jr=5.2-2.4*u,top=-7-8.5*u+.6*jr,len=k==3?4.4:2.8;
+  for(let j=0;j<3;j++)put('TEETH',L(a,top+len*j/2,s*jr*.8),1.2)}
+ TB([L(-2,2,s*8),L(4,-6,s*6),L(18,-11.5,s*3.2)],t=>1.4,20,'SKULL');
+});
+TB([L(10,0,0),L(26,-1,0),L(44,-3,0)],t=>8.5-4.8*t,330,'SKULL',{flat:.65,ref:U,rings:10});
+TB([L(4,-7,0),L(20,-12,0),L(40,-15.5,0)],t=>5.2-2.4*t,150,'SKULL',{flat:.6,ref:U,rings:8});
+shard(L(-6,12,5),1.8);shard(L(-6,12,-5),1.8);shard(L(4,13,0),2.2);shard(L(24,6,0),1.4);
+
+/* ---------- neck, body, tail ---------- */
+scales(0,.14,360,'NECK');scales(.14,.5,900,'BODY');scales(.5,1,700,'TAIL');
+spikes(SP,.02,.97,80,rad,t=>13*Math.pow(1-t,1.3)+2,'SPINES',REF);
+[.05,.09,.13].forEach(t=>ring(SP,t,rad(t)+1.4,24,'BRONZE'));
+[.3,.38,.46].forEach(t=>ring(SP,t,rad(t)+1.4,28,'BRONZE'));
+[.6,.72,.84].forEach(t=>ring(SP,t,rad(t)+1,16,'BRONZE'));
+[.07,.11,.26,.34,.42,.55,.68,.8].forEach(t=>{const f=frame(SP,t,REF);shard(add(f[0],mul(f[2],rad(t)+3)),1.6)});
+
+/* ---------- wings v3: jointed arm, five curved fingers with knuckles + claws, thumb claw, veined scalloped membrane ---------- */
+const Sh=SP(.21),Bd=SP(.36);
+const jring=(sp,t,r,n,g)=>{const f=frame(sp,t);for(let j=0;j<n;j++){const a=6.2832*j/n;put(g,add(f[0],add(mul(f[2],Math.cos(a)*r),mul(f[3],Math.sin(a)*r))),1.4)}};
+[1,-1].forEach(s=>{curW=s;
+ const rt=add(Sh,[s*4,-6,10]),el=add(Sh,[s*24,-40,14]),wr=add(Sh,[s*58,-76,22]);
+ const hum=spl([rt,lerp(rt,el,.5),el]),fore=spl([el,add(lerp(el,wr,.5),[0,-4,0]),wr]);
+ tube(hum,t=>4.2-1*t,80,'WBONE',{rings:5});tube(spl([Sh,add(Sh,[s*5,-3,6]),rt]),t=>4.6-1*t,40,'WBONE',{rings:3});circ(rt,5,18,'IVORY',0);tube(fore,t=>3.4-1.2*t,80,'WBONE',{rings:6});
+ [el,wr].forEach(p=>{for(let j=0;j<22;j++){const a=6.2832*j/22;put('IVORY',add(p,[Math.cos(a)*4.4,Math.sin(a)*4.4,Math.sin(a*2)*2]),1.4)}});
+ tube(spl([wr,add(wr,[-s*6,-10,-4]),add(wr,[-s*9,-19,-6])]),t=>2.6*(1-t)+.3,26,'IVORY');
+ const tips=[[88,-112,36],[106,-72,44],[104,-28,50],[90,12,50],[64,42,42]].map(o=>add(Sh,[s*o[0],o[1],o[2]])),bow=[[0,-14,0],[s*6,-9,0],[s*8,-2,0],[s*5,5,0],[s*2,9,0]];
+ const Fg=tips.map((tp,i)=>spl([wr,add(lerp(wr,tp,.38),mul(bow[i],.9)),add(lerp(wr,tp,.72),mul(bow[i],.55)),tp]));
+ Fg.forEach((f,i)=>{tube(f,t=>2-1.3*t,70,'WBONE',{rings:8});[.38,.72].forEach(t=>jring(f,t,2.2,10,'IVORY'));
+  tube(spl([tips[i],add(tips[i],[s*5,-3+i,2]),add(tips[i],[s*9,-2+2*i,3])]),t=>1.5*(1-t)+.2,14,'IVORY')});
+ const bdp=add(Sh,[s*8,16,11]),E=Fg.concat([spl([wr,lerp(wr,bdp,.5),bdp])]);
+ const scl=(a,b)=>a*(1-.3*Math.sin(Math.PI*b));
+ for(let i=0;i<5;i++){
+  for(let j=0;j<22;j++){const b=j/21;put('WEDGE',lerp(E[i](scl(1,b)),E[i+1](scl(1,b)),b),1.35)}
+  [.25,.5,.75].forEach(b=>{for(let j=0;j<12;j++){const a=.12+.8*j/11;put('WMEM',lerp(E[i](scl(a,b)),E[i+1](scl(a,b)),b),.85)}});
+  [.35,.65,.85].forEach(a=>{for(let j=0;j<14;j++){const b=j/13;put('WBONE',lerp(E[i](scl(a,b)),E[i+1](scl(a,b)),b),.9)}});
+  for(let k=0;k<18;k++){const b=R(),a=Math.max(.1,Math.sqrt(R()))*(1-.3*Math.sin(Math.PI*b));put('WMEM',lerp(E[i](a),E[i+1](a),b),.75)}}
+ curW=0});
+
+const DRAG=OUT;
+const O=[-16,-3,-3],v=(x,y,z)=>add(O,[x,y,z]),NB=12000;
+function gen(f){OUT=[];curW=0;f();return OUT}
+function circ(c,r,n,g,tx,b){tx=tx||0;for(let i=0;i<n;i++){const a=6.2832*i/n,x=Math.cos(a)*r,z=Math.sin(a)*r;put(g,add(c,[x,z*Math.sin(tx),z*Math.cos(tx)]),b||1)}}
+function circF(c,r,n,g,b){for(let i=0;i<n;i++){const a=6.2832*i/n;put(g,add(c,[Math.cos(a)*r,Math.sin(a)*r,0]),b||1)}}
+function line(a,b,n,g,bb,j){for(let i=0;i<n;i++)put(g,jit(lerp(a,b,i/(n-1||1)),j||0),bb||1)}
+function bar(a,b,th,dp,n,g){const d=norm(sub(b,a)),nx=[-d[1],d[0],0];for(let i=0;i<n;i++){let u=(R()*2-1)*th,w=(R()*2-1)*dp,r=R(),gg=g,bb=1;if(r<.45)u=u>0?th:-th;else if(r<.8)w=w>0?dp:-dp;else{gg='DEEP';bb=.6}
+ put(gg,add(add(lerp(a,b,R()),mul(nx,u)),[0,0,w]),bb)}}
+/* icosahedron (crystal form) */
+const phi=(1+Math.sqrt(5))/2,V=[];
+[-1,1].forEach(a=>[-phi,phi].forEach(b=>{V.push([0,a,b],[a,b,0],[b,0,a])}));
+const VV=V.map(p=>mul(norm(p),64)),E=[];
+for(let i=0;i<12;i++)for(let j=i+1;j<12;j++)if(Math.hypot(...sub(VV[i],VV[j]))<68)E.push([VV[i],VV[j]]);
+
+/* FORM 1 galaxy v3: Milky-Way-like barred spiral: bar, bulge, 2 major + 2 minor arms, dust lanes, clumps, knots, stars, globulars, satellites */
+const fGal=()=>{
+ const gs=()=>(R()+R()+R()-1.5)/1.5,G=(x,y,z)=>v(x,y,z);
+ const warp=(x,y)=>16*Math.pow(Math.hypot(x,y)/100,2)*Math.cos(Math.atan2(y,x)-.6);
+ const pt=(x,y,zt)=>G(x,y,warp(x,y)+zt);
+ const BA=.25,arm=(a,phi,off)=>{const th=BA+a*1.5708+phi+(a==2?.05:0),r=12*Math.exp(.5*phi)+off;return[r*Math.cos(th),r*Math.sin(th),r]};
+ for(let i=0;i<2600;i++){const r=19*Math.pow(R(),1.7),u=R()*2-1,th=R()*6.2832,s=Math.sqrt(1-u*u);
+  put(r<4?'IVORY':r<9?'MECH':r<15?'EDGE':'BRONZE',G(r*s*Math.cos(th),r*s*Math.sin(th),r*u*.6),r<4?1.4:1)}
+ for(let i=0;i<320;i++)put('IVORY',G(gs()*2.2,gs()*2.2,gs()*1.4),1.6);
+ for(let i=0;i<700;i++){const t=(R()*2-1)*30,w=gs()*3.6,c=Math.cos(BA),s=Math.sin(BA);put(i%4?'EDGE':'MECH',pt(t*c-w*s,t*s+w*c,gs()*1.4),1)}
+ for(let i=0;i<600;i++){const a=R()*6.2832,r=8+R()*7;put(i%5?'EDGE':'BRONZE',pt(r*Math.cos(a),r*Math.sin(a),gs()*.8),.9+R()*.4)}
+ [8.5,11.5,14.5].forEach(r=>{for(let i=0;i<120;i++){const a=6.2832*i/120;put('IVORY',pt(r*Math.cos(a),r*Math.sin(a),0),1.2)}});
+ [2800,1300,2800,1300].forEach((n,a)=>{let c=0;
+  while(c<n){const t=Math.pow(R(),1.12),phi=t*4.2,sg=1.4+4.2*t,off=gs()*sg;
+   if(off<-.5*sg&&off>-1.2*sg)continue;
+   if(R()>.45+.55*Math.pow(Math.sin(t*23+a*1.9),2))continue;
+   const p=arm(a,phi,off),q=R();put(q<.05?(R()<.5?'CYAN':'VIOLET'):q<.27?'IVORY':'EDGE',pt(p[0],p[1],gs()*(.8+.02*p[2])),.65+.55*(1-t)+R()*.2);c++}});
+ for(let k=0;k<22;k++){const a=k%4,t=.1+R()*.8,p=arm(a,t*4.2,gs()*2),col=k%6==0?'CYAN':k%7==0?'VIOLET':'IVORY';
+  for(let j=0;j<44;j++)put(j%6?col:'IVORY',pt(p[0]+gs()*3,p[1]+gs()*3,gs()*1.4),1+R()*.4)}
+ for(let k=0;k<7;k++){const p=arm(k%4,.3+R()*3.6,gs()*3);for(let j=0;j<14;j++)put('CRIMSON',pt(p[0]+gs()*2,p[1]+gs()*2,gs()),1.1)}
+ for(let k=0;k<60;k++){const p=arm(k%4,R()*4.2,gs()*6),c=pt(p[0],p[1],gs()*3);put('IVORY',c,1.7);[[2.2,0,0],[-2.2,0,0],[0,2.2,0],[0,-2.2,0]].forEach(d=>put('IVORY',add(c,d),.6))}
+ for(let i=0;i<2400;i++){const r=-30*Math.log(1-R()*.95),a=R()*6.2832;if(r>100){i--;continue}put('BODY',pt(r*Math.cos(a),r*Math.sin(a),gs()*2),.45+R()*.2)}
+ for(let i=0;i<500;i++){const r=55+R()*55,u=R()*2-1,th=R()*6.2832,s=Math.sqrt(1-u*u);put('DEEP',G(r*s*Math.cos(th),r*s*Math.sin(th),r*u*.5),.5)}
+ for(let k=0;k<7;k++){const a=R()*6.2832,r=55+R()*40,c=G(r*Math.cos(a),r*Math.sin(a),(R()-.5)*70);for(let j=0;j<70;j++)put(j%4?'EDGE':'IVORY',add(c,[gs()*3.2,gs()*3.2,gs()*3.2]),.9+R()*.4)}
+ [[-104,60],[98,-70]].forEach(c=>{for(let j=0;j<110;j++)put(j%5?'BODY':'IVORY',pt(c[0]+gs()*6,c[1]+gs()*5,gs()*3),.8)});
+ for(let k=0;k<7;k++){const r0=94+k*2.5,a0=R()*6.2832,sp=.5+R()*1.1;for(let j=0;j<60;j++){const a=a0+sp*j/59;put('STEEL',pt(r0*Math.cos(a),r0*.98*Math.sin(a),gs()),.6)}}
+};
+/* FORM 2 DNA: twin backbones, graded rungs, information clusters, collars, mutations, faint internal network */
+const fDna=()=>{
+ const T0=-90,T1=90,TURNS=3,RR=26,gs=()=>(R()+R()+R()-1.5)/1.5;
+ const hx=(t,ph)=>{const y=T0+(T1-T0)*t,a=6.2832*TURNS*t+ph;return v(RR*Math.cos(a)+y*.1,y,RR*Math.sin(a))};
+ [0,Math.PI].forEach((ph,s)=>{const pts=[];for(let i=0;i<=72;i++)pts.push(hx(i/72,ph));
+  tube(spl(pts),t=>2.6+.5*Math.sin(t*251),1250,s?'BRONZE':'EDGE',{rings:90});
+  for(let i=0;i<=84;i++)circ(hx(i/84,ph),3.6,10,'STEEL',.5,.9)});
+ const mids=[];
+ for(let k=0;k<42;k++){const t=(k+.5)/42,pa=hx(t,0),pb=hx(t,Math.PI),mid=lerp(pa,pb,.5),th=k%5==0?2:1.1,mut=k==9||k==22||k==33,cut=mut?.35:0,y=T0+(T1-T0)*t;mids.push(mid);
+  for(let i=0;i<96;i++){const u=R();if(u>.5-cut&&u<.5+cut)continue;put(u<.5?'BRONZE':'EDGE',add(lerp(pa,pb,u),[gs()*th*.5,gs()*th,gs()*th*.5]),.9)}
+  put('IVORY',mid,1.5);
+  if(k%7==3)for(let j=0;j<28;j++)put(j%9==0?(j%2?'CYAN':'VIOLET'):'IVORY',add(mid,[gs()*3,gs()*3,gs()*3]),1.2);
+  if(mut){[1,-1].forEach(s=>put('DEEP',add(lerp(pa,pb,.5+s*.3),[5,3*s,4]),.8));put('CRIMSON',add(mid,[7,2,5]),1.5)}
+  if(k%10==0)circ(v(y*.1,y,0),RR+5,130,'BRONZE',0,1);
+  if(k>0)line(mids[k-1],mid,12,'DEEP',.5,.3)}
+ line(v(T0*.1,T0,0),v(T1*.1,T1,0),140,'DEEP',.5,.4);
+ [T0,T1].forEach(y=>{circ(v(y*.1,y,0),12,60,'IVORY',0);shard(v(y*.1,y,0),3)})};
+
+/* FORM 3 shield: layered dome, keel, crossed ceremonial pikes */
+const swd=y=>y<22?58:58*Math.sqrt(Math.max(0,1-Math.pow((y-22)/62,2)));
+const dz=(x,y)=>-14*(1-Math.pow(x/60,2))*(1-Math.pow(y/92,2));
+const ol=(k,n,g,zo,b)=>{for(let i=0;i<n;i++){let x,y;if(R()<.18){y=-84*k;x=(R()-.5)*116*k}else{y=(R()*2-1)*84*k;x=(R()<.5?-1:1)*swd(y/k)*k}put(g,v(x,y,dz(x,y)+zo),b)}};
+const fShd=()=>{
+ const _n0=OUT.length;
+ ol(1,560,'EDGE',-6,1.2);ol(1,300,'DEEP',7,.8);ol(.84,380,'BRONZE',-9,1);ol(.66,280,'EDGE',-11,1);ol(.46,200,'IVORY',-12,1.1);
+ for(let gy=-80;gy<=80;gy+=6)for(let gx=-56;gx<=56;gx+=6){const x=gx+((gy/6)&1)*3;if(Math.abs(x)<swd(gy)-3){put('BODY',v(x,gy,dz(x,gy)-3),.8);put('DEEP',v(x,gy,dz(x,gy)+6),.8)}}
+ line(v(0,-84,dz(0,-84)-10),v(0,84,dz(0,84)-10),260,'IVORY',1.3,.5);
+ [-52,-22,14,44].forEach(y=>{const w=swd(y)-4;line(v(-w,y,dz(w,y)-8),v(w,y,dz(w,y)-8),60,'BRONZE',1,.6)});
+ const _n1=OUT.length;
+ /* merged shield/armoured-pike composition: two ceremonial pikes cross behind the shield */
+ const pikeA=[v(-64,-96,-22),v(64,104,-22)];
+ const pikeB=[v(64,-96,-24),v(-64,104,-24)];
+ [pikeA,pikeB].forEach((p,pi)=>{
+   tube(spl([p[0],lerp(p[0],p[1],.5),p[1]]),t=>3.8-1.35*t,330,'BRONZE',{rings:20});
+   const tip=p[1],neck=lerp(p[0],p[1],.91);
+   tube(spl([neck,tip]),t=>2.5*(1-t)+.35,48,'IVORY',{rings:5});
+   line(neck,tip,42,'IVORY',1.5,.3);
+   line(v(tip[0],tip[1]-10,tip[2]),v(tip[0]-7,tip[1]-4,tip[2]),18,'EDGE',1,.4);
+   line(v(tip[0],tip[1]-10,tip[2]),v(tip[0]+7,tip[1]-4,tip[2]),18,'EDGE',1,.4);
+   const gx=tip[0],gy=tip[1]-14;
+   line(v(gx-10,gy,tip[2]),v(gx+10,gy,tip[2]),24,'STEEL',1,.4);
+   tube(spl([p[0],lerp(p[0],p[1],.08),v(p[0][0]*1.04,p[0][1]-12,p[0][2])]),t=>2.5*(1-t)+.35,42,'STEEL');
+ });
+ /* reinforced crossing hub and shield-to-pike braces */
+ const crossPt=v(0,4,-23);
+ circ(crossPt,22,90,'IVORY',1.2);
+ circ(v(0,0,-24),15,70,'BRONZE',.8);
+ line(v(-52,-72,-16),v(-8,0,-23),72,'EDGE',1,.4);
+ line(v(52,-72,-16),v(8,0,-23),72,'EDGE',1,.4);
+ line(v(-52,72,-16),v(8,0,-23),72,'EDGE',1,.4);
+ line(v(52,72,-16),v(-8,0,-23),72,'EDGE',1,.4);
+ const _n3=OUT.length;
+ /* dense shield silhouette: deterministic contour bands + central boss */
+ for(let yy=-84;yy<=84;yy+=3.5){
+   const half=Math.max(0,swd(yy)-2.5);
+   if(half>0){
+     line(v(-half,yy,dz(half,yy)-13),v(half,yy,dz(half,yy)-13),
+          Math.max(8,Math.round(half*1.8)),yy%14===0?'IVORY':'EDGE',.8,.25);
+   }
+ }
+ for(let xx=-52;xx<=52;xx+=4){
+   const ymax=xx===0?84:22+62*Math.sqrt(Math.max(0,1-Math.pow(xx/58,2)));
+   line(v(xx,-80,dz(xx,-80)-12),v(xx,ymax,dz(xx,ymax)-12),
+        Math.max(10,Math.round((ymax+80)*.7)),xx%12===0?'BRONZE':'DEEP',.65,.2);
+ }
+ circ(v(0,0,-27),24,260,'IVORY',1.15);
+ circ(v(0,0,-29),15,190,'BRONZE',.8);
+ for(let i=0;i<4;i++)shard(v(0,0,-32),(i+2)*2.6);
+ const _k=.86;for(let i=0;i<OUT.length;i++)if(i<_n1||i>=_n3){const t=OUT[i].t;t[0]=O[0]+(t[0]-O[0])*_k;t[1]=O[1]+(t[1]-O[1])*_k}};
+
+/* FORM 5 terminal prompt: extruded > with cursor and structural command node */
+const fTrm=()=>{
+ bar(v(-46,-66,0),v(28,0,0),11,9,1500,'EDGE');bar(v(28,0,0),v(-46,66,0),11,9,1500,'EDGE');
+ line(v(-52,-74,-9),v(34,0,-9),240,'IVORY',1.4,.6);line(v(34,0,-9),v(-52,74,-9),240,'IVORY',1.4,.6);
+ bar(v(34,54,0),v(74,54,0),5,9,520,'BRONZE');line(v(30,45,-9),v(78,45,-9),90,'IVORY',1.3,.4);
+ for(let i=0;i<14;i++){const a=R()*6.2832,r=26+R()*22;shard(v(Math.cos(a)*r,Math.sin(a)*r*1.2,(R()-.5)*20),1+R()*1.4)}
+ circ(v(0,0,0),18,60,'STEEL',.6)};
+/* FORM 4 wolf v7: same vocabulary as the dragon (staggered fur-plate lattice, bright dorsal ridge, silhouette rails, joint rings, bronze collars, crystal shards).
+   Skeleton first: skull / neck / withers / deep chest / tucked waist / pelvis / four limb chains with hock + stifle / rooted tail. Body points are thinned to an even spacing; head kept dense. */
+const gsW=()=>(R()+R()+R()-1.5)/1.5,UP=[0,-1,0],cgW=y=>{const z=y+(R()-.5)*16;return z<-20?'BODY':z<-2?'NECK':'EDGE'};
+function plates(sp,rad,t0,t1,n,o){o=o||{};let len=0,ra=0;for(let i=0;i<20;i++){const a=t0+(t1-t0)*i/20,b=t0+(t1-t0)*(i+1)/20;len+=Math.hypot(...sub(sp(b),sp(a)));ra+=rad(a)}ra/=20;
+ const fN=o.fN||1,fB=o.fB||1,m=(fN+fB)/2,s_=Math.sqrt(5.2*ra*m*len/n),rows=Math.max(4,Math.round(len/s_));
+ for(let j=0;j<=rows;j++){const t=t0+(t1-t0)*j/rows,r=rad(t),cols=Math.max(4,Math.round(5.2*r*m/s_)),f=frame(sp,t,UP);
+  const at=(a,k,b,g2)=>{const p=add(f[0],add(mul(f[2],Math.cos(a)*r*k*fN),mul(f[3],Math.sin(a)*r*k*fB)));put(g2||cgW(p[1]),p,b)};
+  for(let c=0;c<cols;c++)at((c+(j&1)*.5)/cols*6.2832+(R()-.5)*.08,1,1);
+  at(0,1.03,1.4,o.ridge||'EDGE');at(3.1416,1,o.both?1.3:1,o.both?'EDGE':null)}
+ for(let i=0;i<(o.rails||0);i++){const t=t0+(t1-t0)*i/(o.rails-1),r=rad(t),f=frame(sp,t,UP);put('EDGE',add(f[0],mul(f[2],r*fN*1.01)),1.65);put('EDGE',add(f[0],mul(f[2],-r*fN*.99)),1.45)}}
+function tufts(sp,rad,n,len,t0,t1,fN,fB,side){for(let i=0;i<n;i++){const t=t0+R()*(t1-t0),f=frame(sp,t,UP),a=side===undefined?R()*6.2832:side+(R()-.5)*1.4,
+ ou=norm(add(mul(f[2],Math.cos(a)*fN),mul(f[3],Math.sin(a)*fB))),p=add(f[0],mul(add(mul(f[2],Math.cos(a)*fN),mul(f[3],Math.sin(a)*fB)),rad(t))),d=norm(add(mul(f[1],.9),mul(ou,.4))),L2=len*(.7+R()*.6);
+ for(let j=0;j<3;j++)put(j==2&&R()<.1?'IVORY':cgW(p[1]),add(p,mul(d,L2*j/2)),.9+.2*j/2)}}
+function fring(sp,t,r,n,g){const f=frame(sp,t,UP);for(let j=0;j<n;j++){const a=6.2832*j/n;put(g,add(f[0],add(mul(f[2],Math.cos(a)*r),mul(f[3],Math.sin(a)*r))),1.3)}}
+/* head: facing the viewer, slight tilt */
+const fWHead=()=>{
+ const Fw=norm([-.5,.12,-.86]),U0=norm(sub(UP,mul(Fw,dot(UP,Fw)))),R0=cross(Fw,U0),ro=.24,Uw=add(mul(U0,Math.cos(ro)),mul(R0,Math.sin(ro))),Rw=sub(mul(R0,Math.cos(ro)),mul(U0,Math.sin(ro))),Hc=v(-40,-29,-13.5);
+ const Lw=(a,b,c)=>add(Hc,add(mul(Fw,a),add(mul(Uw,b),mul(Rw,c))));
+ const ey=[1,-1].map(s=>Lw(8.5,3.5,s*7));
+ for(let i=0;i<520;i++){const u=R()*2-1;let th=R()*6.2832;if(R()<.5)th=Math.round(th/.3927)*.3927;const q=Math.sqrt(1-u*u),p=Lw(q*Math.cos(th)*13,u*11,q*Math.sin(th)*10.5);
+  if(ey.some(e=>Math.hypot(p[0]-e[0],p[1]-e[1],p[2]-e[2])<3.6)){i--;continue}put('SKULL',p,1)}
+ for(let i=0;i<40;i++){const a=10-20*i/39;put('SKULL',Lw(a,10.8*Math.sqrt(1-Math.pow(a/13,2)),0),1.4)}
+ [1,-1].forEach(s=>{
+  for(let j=0;j<18;j++)put('EYES',jit(Lw(8,3.3,s*6.4),1.6),1.5);
+  tube(spl([Lw(11,8,s*3),Lw(9,10,s*8),Lw(3,9,s*10.5)]),t=>2.1,44,'SKULL',{rings:6});
+  tube(spl([Lw(6,0,s*10),Lw(-2,-3,s*11.5),Lw(-8,-5,s*9)]),t=>1.5,36,'SKULL');
+  const es=spl([Lw(-3,8,s*6),Lw(-5,15,s*7.5),Lw(-6,21,s*8)]),er=t=>5*(1-t)+.5;tube(es,er,150,'HORNS',{flat:.35,rings:6});
+  for(let i=0;i<36;i++){const t=i/35,f=frame(es,t);put('HORNS',add(f[0],mul(f[3],er(t)*.95)),1.35);put('HORNS',add(f[0],mul(f[3],-er(t)*.95)),1.35)}
+  for(let j=0;j<26;j++)put('IVORY',Lw(-3.5-R()*2,9+R()*8,s*(6.2+R()*1.4)),.85);
+  for(let j=0;j<90;j++){const b=Lw(-8+R()*10,-2-R()*7,s*(8+R()*3)),d=norm(add(mul(Fw,-.6),add(mul(Uw,-.7),mul(Rw,s*.4)))),L2=5+R()*4;put('EDGE',b,1);put('EDGE',add(b,mul(d,L2*.5)),1.05);put(R()<.1?'IVORY':'EDGE',add(b,mul(d,L2)),1.15)}
+  [0,1,2,3].forEach(j=>put('TEETH',Lw(29,-5-j,s*4.2),1.3));[0,1,2].forEach(j=>put('TEETH',Lw(28,-7.6+j*.9,s*3.5),1.3));
+  tube(spl([Lw(11,-3.2,s*7.5),Lw(22,-4.2,s*5.4),Lw(34,-5,s*3.4)]),t=>.7,34,'EDGE');
+  tube(spl([Lw(-2,0,s*9.2),Lw(8,-7.5,s*6),Lw(22,-9.2,s*3.4)]),t=>1.4,30,'SKULL');
+  tube(spl([Lw(31,-3,s*5),Lw(27,-8,s*8),Lw(21,-14,s*11)]),t=>.35,12,'WHISKER')});
+ const mz=spl([Lw(10,0,0),Lw(24,-1.5,0),Lw(35,-3.2,0)]),mr=t=>8-3.8*t;tube(mz,mr,340,'SKULL',{flat:.78,ref:Uw,rings:9});
+ for(let i=0;i<44;i++){const t=i/43,f=frame(mz,t,Uw);put('IVORY',add(f[0],mul(f[2],mr(t)*.78)),1.35)}
+ tube(spl([Lw(4,-6,0),Lw(18,-9,0),Lw(31,-9.6,0)]),t=>4.6-2*t,200,'SKULL',{flat:.7,ref:Uw,rings:7});
+ for(let j=0;j<34;j++)put('BRONZE',add(Lw(35.8,-2.6,0),[gsW()*2.4,gsW()*1.9,gsW()*2.6]),1.4);
+ for(let k=0;k<7;k++)put('TEETH',Lw(34,-5.7,(k-3)*1.05),1.2);
+ shard(Lw(-4,12,5),1.6);shard(Lw(-4,12,-5),1.6)};
+/* body */
+const fWBody=()=>{
+ const e1=(t,c,w)=>Math.exp(-Math.pow((t-c)/w,2));
+ const nk=spl([v(-34,-28,-3),v(-31,-22,-1),v(-28,-13,0),v(-26,-4,0)]),nR=t=>11+5*t;
+ plates(nk,nR,0,1,800,{fB:.9,rails:170});tufts(nk,nR,380,10,0,1,1,.9);fring(nk,.35,nR(.35)+1.6,22,'BRONZE');fring(nk,.7,nR(.7)+1.6,24,'BRONZE');
+ const bd=spl([v(-34,-6,0),v(-15,-8,0),v(2,-5,1),v(22,-4,3),v(38,-9,5)]),bR=t=>22-3*t-7*e1(t,.62,.2)+3*e1(t,.9,.18)-(t>.5?(t-.5)*8:0);
+ plates(bd,bR,0,1,2300,{fB:.62,ridge:'SPINES',rails:420});tufts(bd,bR,130,7,0,1,1,.62,0);tufts(bd,bR,110,9,0,.3,1,.62);tufts(bd,bR,80,6,.55,1,1,.62);
+ for(let k=0;k<11;k++){const t=.04+k*.04,f=frame(bd,t,UP),r=bR(t);for(let j=0;j<18;j++){const a=Math.PI*j/17;put(k%3?'EDGE':'BRONZE',add(f[0],add(mul(f[2],Math.cos(a)*r),mul(f[3],Math.sin(a)*r*.62))),1.15)}}
+ plates(spl([v(-40,-14,0),v(-24,-12,0),v(-8,-6,0)]),t=>14-3*t,0,1,480,{fB:.72});plates(spl([v(22,-10,2),v(34,6,5),v(38,22,8)]),t=>15-6*t,0,1,520,{fB:.78});
+ shard(v(-30,-22,-9),2.2);shard(v(30,-18,-9),2.2);shard(v(-26,-6,-14),1.6);
+ [[[-34,0,-11],[-33,22,-11],[-36,46,-11],[-37,64,-11],[-45,75,-11]],[[-24,0,11],[-22,22,11],[-24,46,11],[-24,64,11],[-32,75,11]],[[32,-6,-11],[25,18,-12],[40,44,-11],[37,64,-11],[30,75,-11]],[[36,-6,11],[29,18,11],[43,44,11],[40,64,11],[33,75,11]]].forEach((p,i)=>{
+  const P5=p.map(q=>v(q[0],q[1]*.88,q[2])),sp=spl(P5),h=i>1,g=t=>Math.exp(-t*t),lr=t=>h?10.5-5.6*t+4*g((t-.12)/.17)+1.4*g((t-.62)/.1):8.2-3.2*t+2*g((t-.15)/.12);
+  plates(sp,lr,0,1,h?560:470,{fB:.95,both:true,rails:h?170:140});tufts(sp,lr,h?90:70,5,0,1,1,.95);
+  circ(P5[1],5.2,14,'IVORY',0);circ(P5[2],4.2,14,'IVORY',0);
+  const e=P5[3];for(let c=0;c<4;c++){const tip=add(e,[-4.5,1.5,(c-1.5)*2.3]);for(let j=0;j<8;j++)put('EDGE',lerp(add(e,[0,-3,0]),tip,j/7),1.1);for(let j=0;j<4;j++)put('IVORY',add(tip,[-1.8*j/3,1.4*j/3,0]),1.3)}
+  tube(spl([add(e,[0,-6,0]),e]),t=>4.2,70,'EDGE',{flat:.9})});
+ const tl=spl([v(38,-9,5),v(50,-3,8),v(57,14,10),v(59,34,11),v(57,54,11)]),tR=t=>(5+4.5*Math.sin(Math.PI*(.12+.8*t)))*(1-.3*t);
+ plates(tl,tR,0,1,800,{fB:.85,rails:180});tufts(tl,tR,300,8,0,1,1,.85);for(let j=0;j<30;j++)put(j%3?'EDGE':'IVORY',add(tl(1),[gsW()*2,R()*7,gsW()*2]),1)};
+
+/* ---------- materials [r,g,b,alpha,size,minLight]: amber/gold/ivory base; bronze+steel structural; crimson/cyan/violet rare ---------- */
+const S={AXON:[230,178,72,.82,1.05,.32],SKULL:[255,214,140,.9,1.15,.55],TEETH:[255,244,210,1,1.15,.45],EYES:[255,236,170,1,2,.8],HORNS:[255,205,120,.95,1.15,.45],WHISKER:[190,130,50,.6,.9,.1],
+NECK:[223,158,56,.65,1,.2],BODY:[223,158,56,.62,1.05,.2],TAIL:[223,158,56,.6,1,.2],EDGE:[235,170,62,.9,1.1,.45],SPINES:[255,212,135,1,1.1,.45],DEEP:[120,108,92,.4,.9,.1],
+WBONE:[255,208,125,.95,1.2,.45],WEDGE:[225,160,60,.8,1,.3],WMEM:[170,112,40,.5,.9,.1],MECH:[255,238,200,.95,1.2,.45],ATMOS:[140,100,45,.3,.8,.1],
+IVORY:[255,246,225,1,1.3,.6],BRONZE:[196,128,58,.85,1.1,.35],STEEL:[135,130,120,.7,1,.2],CRIMSON:[205,42,36,1,1.6,.7],CYAN:[140,200,205,.9,1.1,.4],VIOLET:[165,150,215,.85,1.1,.4]};
+const RN=Object.keys(S),RI={};RN.forEach((k,i)=>RI[k]=i);
+const SA=RN.map(k=>S[k]),CA=RN.map(k=>'rgb('+S[k][0]+','+S[k][1]+','+S[k][2]+')');
+
+/* ---------- bake: sort by vertical flow so particles travel meaningful paths, resample to 5,200 ---------- */
+function bake(list){const L=list.slice().sort((a,b)=>(a.t[1]+a.t[0]*.25)-(b.t[1]+b.t[0]*.25)),o={t:[],g:[],b:[],w:[]};let last=-1;
+ for(let i=0;i<NB;i++){const k=Math.min(L.length-1,Math.floor(i*L.length/NB)),s=L[k];o.t.push(k===last?jit(s.t,1.3):s.t);last=k;o.g.push(RI[s.g]);o.b.push(s.b);o.w.push(s.w)}return o}
+function thin(L,target){L=L.slice().sort((a,b)=>b.b-a.b);let cell=3.2,kept=L;
+ for(let it=0;it<30&&kept.length<target+1;it++){const grid=new Set();kept=[];for(const p of L){const k=Math.floor(p.t[0]/cell)+','+Math.floor(p.t[1]/cell)+','+Math.floor(p.t[2]/cell);if(!grid.has(k)){grid.add(k);kept.push(p)}}cell-=.12}
+ const out=[];for(let i=0;i<target;i++)out.push(kept[Math.floor(i*kept.length/target)]);return out}
+const wolfList=()=>{const h=gen(fWHead),b=gen(fWBody);return h.concat(thin(b,NB-h.length))};
+const BK=[gen(fGal),gen(fDna),DRAG,wolfList(),gen(fShd),gen(fTrm)].map(bake);
+
+/* ---------- forms: hero yaw, readable/profile range (deg), max manual rotation, fit, shots [focus, zoom, yaw, screen pos] ---------- */
+const FM=[
+ {n:'GALAXY',yaw:0,read:30,prof:120,lim:180,s:1.12,dur:7,shots:[{f:[-16,-3,-3],z:2.6,yaw:.2,sx:.5,sy:.5},{f:[30,-34,-3],z:2.1,yaw:.1,sx:.45,sy:.5}]},
+ {n:'DNA HELIX',yaw:.15,read:25,prof:85,lim:90,s:1.08,dur:7,shots:[{f:[-16,-48,-3],z:2.2,yaw:.3,sx:.5,sy:.45}]},
+ /* DRAGON hero: scene yaw 17deg, head built to point straight down the camera axis (nose perpendicular to the screen) at exactly this yaw.
+    Readable +-7deg, fully dimmed by 28deg, manual limit +-34deg; variety comes from close-ups (face, horns, wing wrist, wing fan). */
+ {n:'SERPENTINE DRAGON',yaw:.30,read:7,prof:28,lim:34,s:.94,dur:26,shots:[{f:[-19,-68,-23],z:2.3,yaw:.30,sx:.5,sy:.45},{f:[8,-105,40],z:1.9,yaw:.32,sx:.55,sy:.42},{f:[42,-80,22],z:2.4,yaw:.32,sx:.45,sy:.5},{f:[60,-52,36],z:1.9,yaw:.3,sx:.42,sy:.5}]},
+ /* WOLF hero: heads left, body near side-on (yaw 7deg), face turned to the viewer with a head tilt, like the black-wolf reference. Readable +-7deg, dimmed by 28deg, limit +-32deg. */
+ {n:'WOLF',yaw:.12,read:7,prof:28,lim:32,s:1.45,dur:15,shots:[{f:[-64,-30,-30],z:2.6,yaw:.15,sx:.5,sy:.45},{f:[-61,63,-14],z:2.8,yaw:.2,sx:.4,sy:.55},{f:[-50,-24,-8],z:2.2,yaw:.15,sx:.5,sy:.5}]},
+ {n:'SHIELD / CROSSED PIKE CREST',yaw:.02,read:10,prof:34,lim:42,s:1.08,dur:7,shots:[{f:[-16,-3,-18],z:2.15,yaw:.02,sx:.5,sy:.5}]},
+ {n:'TERMINAL PROMPT',yaw:.08,read:10,prof:45,lim:40,s:1.3,dur:6,shots:[{f:[-16,-3,-3],z:2.2,yaw:.35,sx:.5,sy:.5}]}];
+const NF=FM.length,DG=2,D2R=Math.PI/180;
+
+/* ---------- particles: dense shape cloud only; no invariant glowing core ---------- */
+const parts=[];
+for(let i=0;i<NB;i++)parts.push({
+  core:0,T:BK.map(b=>b.t[i]),G:BK.map(b=>b.g[i]),B:BK.map(b=>b.b[i]),W:BK.map(b=>b.w[i]),
+  k:.72+R()*.62,del:R()*.65,seed:R()
+});
+const N=parts.length,X=new Float32Array(N),Y=new Float32Array(N),Z=new Float32Array(N),D=new Float32Array(N),
+      LM=new Float32Array(N),RG=new Uint8Array(N),BR=new Float32Array(N);
+const QN=['HIGH','MEDIUM','LOW','TERMINAL'],QS=[1,1,2,5];let q=0,idx=[];
+function mkIdx(){idx=[];for(let i=0;i<N;i++)if(i%QS[q]==0)idx.push(i)}
+mkIdx();
+document.getElementById('cnt').textContent=N;
+
+/* ---------- state + input ---------- */
+const stEl=document.getElementById('st'),pill=document.getElementById('pill'),zmEl=document.getElementById('zm'),dbgp=document.getElementById('dbgp');
+const lf=(a,b,t)=>a+(b-a)*t,PX=-16;
+let fa=0,fb=0,mt=1,fT=0,auto=true,yawOff=0,zoom=1,ox=0,oy=0,rot=0,rotG=0,shot=null,lastInt=0,dbgOn=false,fps=60,lowT=0,fr=0,shown='',last=performance.now();
+const cam={z:1,ox:0,oy:0,dy:0};
+function go(i){if(mt<1||i===fb)return;fa=fb;fb=i;mt=0;fT=0;shot=null}
+const setPill=()=>pill.textContent=(auto?'AUTO':'HOLD')+' · tap: next form · drag: turn · pinch: zoom';
+pill.addEventListener('click',()=>{auto=!auto;setPill()});
+const resetView=()=>{yawOff=0;zoom=1;ox=oy=0};
+document.getElementById('dbg').addEventListener('click',resetView);
+document.getElementById('badge').addEventListener('click',()=>{dbgOn=!dbgOn;dbgp.style.display=dbgOn?'block':'none'});
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(k==' ')auto=!auto,setPill();else if(k>='1'&&+k<=NF)go(+k-1);else if(k=='r')resetView();else if(k=='d')document.getElementById('badge').click();else if(k=='q'){q=(q+1)%3;mkIdx()}});
+function pan(){const m=(zoom-1)*Math.max(W,H)*.5;ox=clamp(ox,-m,m);oy=clamp(oy,-m,m)}
+function zoomAt(z,fx,fy){z=clamp(z,1,3);const k=z/zoom;ox=(fx-W/2)-(fx-W/2-ox)*k;oy=(fy-H/2)-(fy-H/2-oy)*k;zoom=z;if(zoom<1.01){ox=oy=0}pan()}
+const ptr=new Map();let pinch0=0,moved=0;
+cv.addEventListener('pointerdown',e=>{ptr.set(e.pointerId,[e.clientX,e.clientY]);cv.setPointerCapture(e.pointerId);lastInt=performance.now();
+ if(ptr.size==1)moved=0;if(ptr.size==2){const a=[...ptr.values()];pinch0=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1])}});
+cv.addEventListener('pointermove',e=>{const o=ptr.get(e.pointerId);if(!o)return;lastInt=performance.now();
+ const dx=e.clientX-o[0],dy=e.clientY-o[1];ptr.set(e.pointerId,[e.clientX,e.clientY]);
+ if(ptr.size==1){moved+=Math.abs(dx)+Math.abs(dy);yawOff+=dx*.008;if(zoom>1.02){oy+=dy;pan()}}
+ else if(ptr.size==2){const a=[...ptr.values()],d=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);zoomAt(zoom*d/pinch0,(a[0][0]+a[1][0])/2,(a[0][1]+a[1][1])/2);pinch0=d;moved=99}});
+cv.addEventListener('pointerup',e=>{ptr.delete(e.pointerId);if(!ptr.size&&moved<6)go((fb+1)%NF)});
+cv.addEventListener('pointercancel',e=>ptr.delete(e.pointerId));
+cv.addEventListener('wheel',e=>{e.preventDefault();lastInt=performance.now();zoomAt(zoom*Math.exp(-e.deltaY*.0015),e.clientX,e.clientY)},{passive:false});
+const CAM=380;
+function shotTarget(s,sc0){const c=Math.cos(s.yaw),sn=Math.sin(s.yaw),px=s.f[0]-PX,rx=px*c-s.f[2]*sn,rz=px*sn+s.f[2]*c,d=CAM/(CAM+rz);
+ return{z:s.z,yaw:s.yaw,ox:W*s.sx-W/2-rx*sc0*s.z*d,oy:H*s.sy-H/2-(s.f[1]+5)*sc0*s.z*d}}
+const TILT=.95;function galX(p){const dx=p[0]-O[0],dy=p[1]-O[1],dz=p[2]-O[2],c=Math.cos(rotG),s=Math.sin(rotG),x=dx*c-dy*s,y=dx*s+dy*c,ct=Math.cos(TILT),st=Math.sin(TILT);return[O[0]+x,O[1]+y*ct-dz*st,O[2]+y*st+dz*ct]}
+const spn=(i,p)=>i==0?galX(p):i==1?rotY(p):p;
+function rotY(p){const dx=p[0]-O[0],dz=p[2]-O[2],c=Math.cos(rot),s=Math.sin(rot);return[O[0]+dx*c-dz*s,p[1],O[2]+dx*s+dz*c]}
+
+function loop(now){
+ const dt=Math.min(.05,(now-last)/1000);last=now;fr++;fps+=(1/Math.max(dt,.001)-fps)*.05;
+ if(fps<38)lowT+=dt;else lowT=0;if(lowT>2&&q<2){q++;mkIdx();lowT=0}
+ const act=ptr.size>0||now-lastInt<2500||zoom>1.02;
+ if(mt<1){mt=Math.min(1,mt+dt/((fa==DG||fb==DG)?4.5:3));if(mt>=1)fa=fb}
+ else if(auto&&!act){fT+=dt;const f=FM[fb],nS=f.shots.length,slot=f.dur/(nS+1),k=Math.floor((fT-slot*.5)/slot);
+  shot=(k>=0&&k<nS&&fT-(slot*.5+k*slot)<3)?f.shots[k]:null;if(fT>f.dur)go((fb+1)%NF)}
+ else if(act)shot=null;
+ if(!ptr.size&&now-lastInt>4000)yawOff*=Math.exp(-dt*.5);
+ const sa=sm(mt),A=FM[fa],B=FM[fb],lim=lf(A.lim,B.lim,sa)*D2R;yawOff=clamp(yawOff,-lim,lim);
+ const read=lf(A.read,B.read,sa),prof=lf(A.prof,B.prof,sa),ou=sm(clamp((Math.abs(yawOff)/D2R-read)/(prof-read),0,1));
+ rotG+=dt*.1*((fa==0?1-sa:0)+(fb==0?sa:0));rot+=dt*.3*((fa==1?1-sa:0)+(fb==1?sa:0));
+ const hy=lf(A.yaw,B.yaw,sa),sc0=Math.min(W/255,H/245)*lf(A.s,B.s,sa);
+ const tg=shot?shotTarget(shot,sc0):{z:1,ox:0,oy:0,yaw:hy},ke=1-Math.exp(-dt*2.2);
+ cam.z+=(tg.z-cam.z)*ke;cam.ox+=(tg.ox-cam.ox)*ke;cam.oy+=(tg.oy-cam.oy)*ke;cam.dy+=((tg.yaw-hy)-cam.dy)*ke;
+ const yaw=yawOff+hy+cam.dy+.06*Math.sin(now*.00045),cyw=Math.cos(yaw),syw=Math.sin(yaw);
+ const sc=sc0*zoom*cam.z,OX=W/2+ox+cam.ox,OY=H/2+oy+cam.oy,zt=clamp((zoom-1)/2,0,1),flap=.07*Math.sin(now*.0011);
+ const label=mt<1?A.n+' → '+B.n:B.n;
+ for(let i=0;i<N;i++){const p=parts[i];let x,y,z,g=RI.AXON,b=1;
+  {let pa=p.T[fa],pb=p.T[fb];pa=spn(fa,pa);pb=spn(fb,pb);
+   const m=fa==fb?0:sm(clamp(mt*1.45-p.del,0,1));
+   x=pa[0]+(pb[0]-pa[0])*m;y=pa[1]+(pb[1]-pa[1])*m;z=pa[2]+(pb[2]-pa[2])*m;
+   const swl=Math.sin(Math.PI*m)*(p.del-.22)*3;if(swl){const dx=x-O[0],dzz=z-O[2],c=Math.cos(swl),s_=Math.sin(swl);x=O[0]+dx*c-dzz*s_;z=O[2]+dx*s_+dzz*c}
+   const gi=m>.5?fb:fa;g=p.G[gi];b=p.B[gi];const dg=(fb==DG?m:0)+(fa==DG?1-m:0);
+   if(dg>0){x+=Math.sin(now*.0016+y*.045)*2.2*dg*Math.min(1,Math.abs(y-O[1])/50);const w=p.W[gi];
+    if(w){const dx=x-Sh[0],dy=y-Sh[1],f=flap*w*Math.min(1,Math.hypot(dx,dy)/70),c=Math.cos(f),s_=Math.sin(f);x=Sh[0]+dx*c-dy*s_;y=Sh[1]+dx*s_+dy*c}}}
+  const px=x-PX,rx=px*cyw-z*syw,rz=px*syw+z*cyw,d=CAM/(CAM+rz);
+  X[i]=OX+rx*sc*d;Y[i]=OY+(y+5)*sc*d;Z[i]=rz;D[i]=d;RG[i]=g;BR[i]=b;
+  const mn=SA[g][5],df=clamp(.5-rz/260,0,1);LM[i]=mn+(1-mn)*(1-ou*(1-df))}
+ ctx.globalAlpha=1;ctx.shadowBlur=0;ctx.fillStyle='#020305';ctx.fillRect(0,0,W,H);
+ idx.sort((a,b)=>Z[b]-Z[a]);
+ for(let n=0;n<idx.length;n++){const i=idx[n],st=SA[RG[i]],d=D[i],fa_=clamp((d-.42)*1.3,.22,1),lm=LM[i],fine=st[5]<.3?.65+.35*zt:1;
+  ctx.globalAlpha=Math.min(1,st[3]*BR[i]*fa_*lm*fine);ctx.fillStyle=CA[RG[i]];
+  ctx.beginPath();ctx.arc(X[i],Y[i],Math.max(.6,st[4]*parts[i].k*sc*d*.5*(.75+.25*lm)),0,6.2832);ctx.fill()}
+/* restrained shimmer: a sparse phase-selected highlight, no bloom */
+ const shimmer=(Math.sin(now*.0017)+1)*.5;
+ ctx.shadowBlur=0;
+ for(let n=0;n<idx.length;n+=Math.max(17,Math.floor(31/QS[q]))){
+   const i=idx[(n+Math.floor(shimmer*11))%idx.length],st=SA[RG[i]];
+   if(st[5]>.25){
+     ctx.globalAlpha=.10+.12*shimmer;
+     ctx.fillStyle=CA[RG[i]];
+     ctx.beginPath();ctx.arc(X[i],Y[i],Math.max(.7,st[4]*parts[i].k*sc*D[i]*.72),0,6.2832);ctx.fill();
+   }
+ }
+ ctx.globalAlpha=1;
+ if(dbgOn&&fr%10==0)dbgp.textContent='STATE: '+label+'\nPOINTS: '+idx.length+'\nFPS: '+fps.toFixed(0)+'\nANGLE: '+(yawOff/D2R).toFixed(0)+'°\nHERO: ±'+read.toFixed(0)+'° / PROFILE '+prof.toFixed(0)+'°\nLIMIT: ±'+(lim/D2R).toFixed(0)+'°\nDIM: '+(ou*100).toFixed(0)+'%\nMORPH: '+(mt*100).toFixed(0)+'%\nQUALITY: '+QN[q]+'\nARCHITECTURE: PERSISTENT';
+ requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

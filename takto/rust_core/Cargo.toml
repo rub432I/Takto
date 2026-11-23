@@ -1,0 +1,17 @@
+[package]
+name = "takto-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Takto Engineering Team"]
+description = "High-speed shared parsing, math evaluation, and Logseq Markdown engine for Takto FOSS Launcher"
+license = "GPL-3.0-or-later"
+
+[lib]
+crate-type = ["lib", "cdylib"]
+name = "takto_core"
+
+[dependencies]
+# Zero external heavy dependencies to guarantee sub-millisecond execution on 80s hardware
+
+[features]
+default = []
