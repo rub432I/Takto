@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <LinearLayout
+        android:orientation="vertical"
+        android:paddingBottom="@dimen/bottomsheet_padding_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="@dimen/bottomsheet_extra_padding_horizontal">
+        <com.blloc.uicomponents.old.customviews.ThemeableTextView
+            android:textSize="@dimen/bottom_sheet_title"
+            android:gravity="center"
+            android:layout_gravity="center"
+            android:id="@+id/bottom_sheet_title"
+            android:paddingLeft="@dimen/setting_item_padding_horizontal"
+            android:paddingBottom="@dimen/bottomsheet_title_padding_bottom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/settings.drawers.settinglabel"
+            android:fontFamily="@font/heavy"
+            app:textColor_DARK="@color/bottom_sheet_text_dark"
+            app:textColor_FOCUS="@color/bottom_sheet_text_focus"
+            app:textColor_LIGHT="@color/bottom_sheet_text_light"
+            app:textColor_SUN="@color/bottom_sheet_text_sun"/>
+        <com.blloc.uicomponents.view.SettingItem
+            android:id="@+id/setting_item_drawer_alignment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:settingItem_icon="@drawable/icon_centervertical"
+            app:settingItem_text="@string/settings.drawer_alignment.settinglabel"/>
+        <com.blloc.uicomponents.view.SettingItemSwitch
+            android:id="@+id/setting_item_drawer_icons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:settingItem_icon="@drawable/settings_icon_tiles_drawericons"
+            app:settingItem_text="@string/settings.show_drawer_icons.settinglabel"/>
+        <com.blloc.uicomponents.view.SettingItemSwitch
+            android:id="@+id/setting_item_large_tiles"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:settingItem_icon="@drawable/settings_icon_tiles_largetiles"
+            app:settingItem_text="@string/settings.use_large_tiles.setting_label"/>
+    </LinearLayout>
+</merge>

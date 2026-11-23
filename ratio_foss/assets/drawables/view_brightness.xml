@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:id="@+id/brightness_bar_and_button"
+    android:layout_width="match_parent"
+    android:layout_height="30dp">
+    <FrameLayout
+        android:layout_width="0dp"
+        android:layout_height="30dp"
+        android:layout_weight="1">
+        <com.blloc.blurview.BlurView
+            android:id="@+id/section_brightness_blurbackrground"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+        <com.blloc.bllocjavatiles.app_edit_screen.custom_views.brightness.BllocSeekBar
+            android:id="@+id/brightness_seekbar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+    </FrameLayout>
+    <ImageView
+        android:id="@+id/brighness_btn"
+        android:background="@drawable/view_app_edit_screen_section_background_new"
+        android:padding="7dp"
+        android:layout_width="50dp"
+        android:layout_height="30dp"
+        android:layout_marginLeft="10dp"
+        android:src="@drawable/ic_brightness_btn"/>
+</LinearLayout>

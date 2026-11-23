@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:background="@drawable/rounded_corners_10dp_fill_new"
+    android:paddingTop="20dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:backgroundTint="#242424"
+    android:layout_marginHorizontal="20dp">
+    <EditText
+        android:textSize="20dp"
+        android:textColor="#fff"
+        android:id="@+id/et"
+        android:background="@drawable/rounded_corners_50dp_fill"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/heavy"
+        android:backgroundTint="#4d4d4d"
+        android:layout_marginHorizontal="20dp"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="5dp"/>
+    <TextView
+        android:textColor="#fff"
+        android:layout_gravity="right"
+        android:id="@+id/done_btn"
+        android:padding="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Done"
+        android:fontFamily="@font/medium"/>
+</LinearLayout>

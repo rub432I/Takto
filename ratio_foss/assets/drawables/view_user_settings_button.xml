@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.blloc.blurview.BlurView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:cornerRadius="@dimen/conversation_header_corner_radius"/>
+    <com.blloc.bllocjavatree.ui.themes.customviews.ThemeableLinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:linearBackground_DARK="@color/conversationSettings_dark"
+        app:linearBackground_FOCUS="@color/conversationSettings_focus"
+        app:linearBackground_LIGHT="@color/conversationSettings_light"
+        app:linearBackground_SUN="@color/conversationSettings_sun"
+        app:linearLayout_corner_radius="@dimen/conversation_header_corner_radius"/>
+    <LinearLayout
+        android:gravity="center"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true">
+        <ImageView
+            android:id="@+id/icon"
+            android:padding="7dp"
+            android:layout_width="@dimen/user_settings_button_icon"
+            android:layout_height="@dimen/user_settings_button_icon"
+            android:src="@drawable/ic_option_archive"/>
+        <TextView
+            android:textSize="@dimen/user_settings_button_text"
+            android:gravity="center"
+            android:id="@+id/text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/medium"/>
+    </LinearLayout>
+</RelativeLayout>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/dockContainer"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.blloc.uicomponents.old.customviews.ThemeableBlurView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingHorizontal="@dimen/dock_internal_horizontal_padding"
+        app:blurDisabledColor_DARK="@color/gray_70"
+        app:blurDisabledColor_LIGHT="#b3b3b3"
+        app:cornerRadius="22.5dp"
+        app:foregroundColor_DARK="@color/opacity_light_10"
+        app:foregroundColor_FOCUS="@color/gray_80"
+        app:foregroundColor_LIGHT="@color/opacity_light_30"
+        app:foregroundColor_SUN="@color/gray_20">
+        <com.blloc.kotlintiles.ui.dock.DockRecyclerView
+            android:orientation="horizontal"
+            android:id="@+id/dockRecyclerView"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_centerHorizontal="true"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+    </com.blloc.uicomponents.old.customviews.ThemeableBlurView>
+    <com.blloc.kotlintiles.ui.utils.DropIndicatorView
+        android:id="@+id/dropIndicatorView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</RelativeLayout>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:id="@+id/categorizer_item_root"
+    android:paddingBottom="@dimen/onboarding_categorizer_item_paddingB"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:animateLayoutChanges="true">
+    <RelativeLayout
+        android:gravity="center"
+        android:id="@+id/categorizer_item"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.blloc.uicomponents.old.customviews.ThemeableTextView
+            android:textSize="@dimen/onboarding_categorizer_textSize"
+            android:gravity="center_vertical"
+            android:id="@+id/categorizer_item_text"
+            android:paddingLeft="4dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:animateLayoutChanges="true"
+            android:fontFamily="@font/heavy"
+            android:paddingVertical="4dp"
+            app:textColor_DARK="@color/white"
+            app:textColor_FOCUS="@color/white"
+            app:textColor_LIGHT="@color/white"
+            app:textColor_SUN="@color/white"/>
+    </RelativeLayout>
+    <com.blloc.uicomponents.old.customviews.ThemeableRadioButton
+        android:layout_gravity="center"
+        android:id="@+id/categorizer_item_radio_button"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:adjustViewBounds="true"
+        app:radioButtonColor_DARK="@color/white"
+        app:radioButtonColor_FOCUS="@color/white"
+        app:radioButtonColor_LIGHT="@color/white"
+        app:radioButtonColor_SUN="@color/white"/>
+</FrameLayout>

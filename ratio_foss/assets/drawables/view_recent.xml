@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.blloc.bllocjavatree.utils.BllocRecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/recent_list"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:alpha="1"/>

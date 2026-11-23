@@ -1,0 +1,31 @@
+# Takto Repository .gitignore
+
+# Build outputs
+takto/build/
+build/
+*.dex
+*.class
+*.apk
+*.idsig
+
+# Rust build artifacts
+takto/rust_core/target/
+rust_core/target/
+**/target/
+
+# Databases and local runtime data
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+takto/core/takto_local.db
+
+# Keystores and private signing keys
+*.keystore
+*.jks
+
+# IDE and system files
+.idea/
+*.iml
+.gradle/
+.DS_Store

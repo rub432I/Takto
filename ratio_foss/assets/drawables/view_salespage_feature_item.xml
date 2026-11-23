@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:id="@+id/feature_root"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingVertical="@dimen/settings_item_paddingV">
+    <com.blloc.uicomponents.old.customviews.ThemeableImageView
+        android:id="@+id/feature_icon"
+        android:layout_width="@dimen/settings_item_iconHeight"
+        android:layout_height="@dimen/settings_item_iconHeight"
+        android:layout_marginRight="@dimen/settings_item_icon_marginR"
+        app:imageColor_DARK="@color/salespage_text_dark"
+        app:imageColor_FOCUS="@color/salespage_text_dark"
+        app:imageColor_LIGHT="@color/salespage_text_light"
+        app:imageColor_SUN="@color/salespage_text_light"/>
+    <com.blloc.uicomponents.old.customviews.ThemeableLinearLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:linearBackground_DARK="@color/salespage_background_dark"
+        app:linearBackground_FOCUS="@color/salespage_background_dark"
+        app:linearBackground_LIGHT="@color/salespage_background_light"
+        app:linearBackground_SUN="@color/salespage_background_light">
+        <com.blloc.uicomponents.old.customviews.ThemeableTextView
+            android:textSize="@dimen/sales_page_description"
+            android:gravity="center_vertical"
+            android:id="@+id/feature_description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/medium"
+            app:textColor_DARK="@color/salespage_text_dark"
+            app:textColor_FOCUS="@color/salespage_text_dark"
+            app:textColor_LIGHT="@color/salespage_text_light"
+            app:textColor_SUN="@color/salespage_text_light"/>
+    </com.blloc.uicomponents.old.customviews.ThemeableLinearLayout>
+</LinearLayout>

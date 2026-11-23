@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:gravity="left"
+    android:orientation="vertical"
+    android:id="@+id/category_root"
+    android:paddingBottom="@dimen/about_contributors_paddingH"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/about_contributors_paddingH">
+    <com.blloc.uicomponents.old.customviews.ThemeableTextView
+        android:textSize="@dimen/about_contributors_title"
+        android:id="@+id/category_name"
+        android:paddingBottom="8dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/heavy"
+        app:textColor_DARK="@color/bottom_sheet_text_dark"
+        app:textColor_FOCUS="@color/bottom_sheet_text_focus"
+        app:textColor_LIGHT="@color/bottom_sheet_text_light"
+        app:textColor_SUN="@color/bottom_sheet_text_sun"/>
+    <LinearLayout
+        android:gravity="left"
+        android:orientation="vertical"
+        android:id="@+id/category_apps"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+</LinearLayout>

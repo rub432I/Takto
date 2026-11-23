@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="center_vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingVertical="4dp">
+    <com.vanniktech.emoji.EmojiTextView
+        android:textSize="@dimen/user_settings_tag_icon_emoji"
+        android:textColor="@color/black"
+        android:gravity="center"
+        android:id="@+id/tag_icon"
+        android:background="@drawable/rounded_corners_50dp_fill"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:layout_width="@dimen/user_settings_tag_icon"
+        android:layout_height="@dimen/user_settings_tag_icon"
+        android:layout_marginRight="@dimen/user_settings_tag_icon_margin"
+        android:text="������"
+        android:textIsSelectable="false"/>
+    <TextView
+        android:textSize="@dimen/user_settings_tag_text"
+        android:gravity="center_vertical"
+        android:id="@+id/tag_title"
+        android:background="@drawable/rounded_corners_50dp_fill"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:fontFamily="@font/bold"
+        android:paddingHorizontal="12dp"/>
+</LinearLayout>

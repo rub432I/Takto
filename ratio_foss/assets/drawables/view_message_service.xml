@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="3dp">
+    <com.blloc.uicomponents.old.customviews.ThemeableImageView
+        android:id="@+id/merge_messaging_service"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        app:imageColor_DARK="@color/icon_dark"
+        app:imageColor_FOCUS="@color/icon_focus"
+        app:imageColor_LIGHT="@color/icon_light"
+        app:imageColor_SUN="@color/icon_sun"/>
+</LinearLayout>

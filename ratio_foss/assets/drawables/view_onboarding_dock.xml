@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/transparent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.blloc.uicomponents.old.customviews.ThemeableLinearLayout
+        android:id="@+id/dock_root"
+        android:background="@color/transparent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:linearBackground_DARK="@color/dock_background_dark"
+        app:linearBackground_FOCUS="@color/dock_background_focus"
+        app:linearBackground_LIGHT="@color/dock_background_light"
+        app:linearBackground_SUN="@color/dock_background_sun"
+        app:linearLayout_corner_radius="@dimen/onboarding_dock_dockCorners">
+        <LinearLayout
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:id="@+id/dock_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingHorizontal="4dp"/>
+    </com.blloc.uicomponents.old.customviews.ThemeableLinearLayout>
+</FrameLayout>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:paddingTop="15dp"
+    android:paddingBottom="50dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.blloc.bllocjavatiles.custom_views.TileViewBackground
+        android:id="@+id/tile_view_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:cornerRadius="10dp"
+        app:endColor="#a24a3d"
+        app:hasPill="false"
+        app:pillHeight="@dimen/tile_notification_indicator_height"
+        app:pillPaddingRight="@dimen/a"
+        app:pillPaddingTop="@dimen/a"
+        app:pillWidth="@dimen/tile_notification_indicator_width"
+        app:startColor="#fda59a"/>
+    <TextView
+        android:textSize="10dp"
+        android:textStyle="bold"
+        android:textColor="#ffffff"
+        android:gravity="center"
+        android:id="@+id/message"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text=""
+        android:alpha="0.3"
+        android:translationY="5dp"/>
+</FrameLayout>

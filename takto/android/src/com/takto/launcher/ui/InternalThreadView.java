@@ -4,20 +4,20 @@ import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
-import android.view.Gravity;
-import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import com.takto.launcher.db.TaktoDbHelper;
+import com.takto.launcher.util.AppExecutors;
+import com.takto.launcher.util.UiUtils;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
 /**
- * InternalThreadView: Center page reverse SMS canvas & personal journal stream.
- * Displays today's captured thoughts, tasks, and expenses in brutalist cards.
+ * InternalThreadView: Center page personal thought & capture stream.
+ * Displays today's notes, tasks, and expenses in chronological cards.
  */
 public class InternalThreadView extends ScrollView {
 
@@ -30,102 +30,116 @@ public class InternalThreadView extends ScrollView {
     }
 
     private GradientDrawable createCardDrawable(String bgColor, String borderColor) {
+        Context ctx = getContext();
         GradientDrawable gd = new GradientDrawable();
         gd.setColor(Color.parseColor(bgColor));
-        gd.setStroke(1, Color.parseColor(borderColor));
-        gd.setCornerRadius(8f);
+        gd.setStroke(UiUtils.dpToPx(ctx, 1), Color.parseColor(borderColor));
+        gd.setCornerRadius(UiUtils.dpToPx(ctx, 6));
         return gd;
     }
 
     private void init() {
+        Context ctx = getContext();
         setVerticalScrollBarEnabled(false);
         setBackgroundColor(Color.BLACK);
 
-        LinearLayout root = new LinearLayout(getContext());
+        LinearLayout root = new LinearLayout(ctx);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(32, 24, 32, 120);
+        root.setPadding(UiUtils.dpToPx(ctx, 20), UiUtils.dpToPx(ctx, 16), UiUtils.dpToPx(ctx, 20), UiUtils.dpToPx(ctx, 90));
 
-        TextView header = new TextView(getContext());
-        header.setText("// INTERNAL THREAD // TODAY'S LOG");
-        header.setTextSize(11);
+        TextView header = new TextView(ctx);
+        header.setText("// INTERNAL THREAD // TODAY'S STREAM");
+        header.setTextSize(10);
         header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         header.setTextColor(Color.parseColor("#FFC86B"));
-        header.setPadding(0, 0, 0, 16);
+        header.setPadding(0, 0, 0, UiUtils.dpToPx(ctx, 12));
         root.addView(header);
 
-        streamContainer = new LinearLayout(getContext());
+        streamContainer = new LinearLayout(ctx);
         streamContainer.setOrientation(LinearLayout.VERTICAL);
         root.addView(streamContainer);
 
         addView(root);
     }
 
-    public void refreshData(TaktoDbHelper db) {
-        streamContainer.removeAllViews();
-        List<TaktoDbHelper.Entry> entries = db.getTodayEntries();
+    public void refreshData(final TaktoDbHelper db) {
+        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                final List<TaktoDbHelper.Entry> entries = db.getTodayEntries();
 
-        if (entries.isEmpty()) {
-            TextView emptyTv = new TextView(getContext());
-            emptyTv.setText("Today's stream is empty.\n\nQuick Commands:\n  j <note>    Log journal thought\n  t <task>    Add - TODO item\n  $ <amount>  Log expense\n  <math>      Calculate instantly");
-            emptyTv.setTextSize(11);
-            emptyTv.setTypeface(Typeface.MONOSPACE);
-            emptyTv.setTextColor(Color.parseColor("#8892B0"));
-            emptyTv.setPadding(16, 24, 16, 24);
-            emptyTv.setBackground(createCardDrawable("#0E1218", "#1E2630"));
-            streamContainer.addView(emptyTv);
-            return;
-        }
+                AppExecutors.getInstance().mainThread().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        streamContainer.removeAllViews();
+                        Context ctx = getContext();
 
-        for (TaktoDbHelper.Entry entry : entries) {
-            LinearLayout card = new LinearLayout(getContext());
-            card.setOrientation(LinearLayout.VERTICAL);
-            card.setPadding(20, 16, 20, 16);
-            card.setBackground(createCardDrawable("#0E1218", "#1E2630"));
+                        if (entries.isEmpty()) {
+                            TextView emptyTv = new TextView(ctx);
+                            emptyTv.setText("Today's stream is empty.\n\nQuick Prefixes:\n  j <note>    Journal thought\n  t <task>    - TODO item\n  $ <amount>  Expense item\n  <math>      Offline calculation");
+                            emptyTv.setTextSize(11);
+                            emptyTv.setTypeface(Typeface.MONOSPACE);
+                            emptyTv.setTextColor(Color.parseColor("#8892B0"));
+                            emptyTv.setPadding(UiUtils.dpToPx(ctx, 14), UiUtils.dpToPx(ctx, 18), UiUtils.dpToPx(ctx, 14), UiUtils.dpToPx(ctx, 18));
+                            emptyTv.setBackground(createCardDrawable("#0E1218", "#1E2630"));
+                            streamContainer.addView(emptyTv);
+                            return;
+                        }
 
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            lp.setMargins(0, 0, 0, 12);
-            card.setLayoutParams(lp);
+                        for (TaktoDbHelper.Entry entry : entries) {
+                            LinearLayout card = new LinearLayout(ctx);
+                            card.setOrientation(LinearLayout.VERTICAL);
+                            card.setPadding(UiUtils.dpToPx(ctx, 14), UiUtils.dpToPx(ctx, 12), UiUtils.dpToPx(ctx, 14), UiUtils.dpToPx(ctx, 12));
+                            card.setBackground(createCardDrawable("#0E1218", "#1E2630"));
 
-            // Header line: [TAG] HH:mm:ss
-            LinearLayout tagRow = new LinearLayout(getContext());
-            tagRow.setOrientation(LinearLayout.HORIZONTAL);
+                            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                            lp.setMargins(0, 0, 0, UiUtils.dpToPx(ctx, 8));
+                            card.setLayoutParams(lp);
 
-            TextView tagView = new TextView(getContext());
-            tagView.setTextSize(10);
-            tagView.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+                            // Header row: [TAG] HH:mm:ss
+                            LinearLayout tagRow = new LinearLayout(ctx);
+                            tagRow.setOrientation(LinearLayout.HORIZONTAL);
 
-            if ("task".equalsIgnoreCase(entry.type)) {
-                tagView.setText(entry.isDone() ? "[TASK // DONE]" : "[TASK // TODO]");
-                tagView.setTextColor(entry.isDone() ? Color.parseColor("#8892B0") : Color.parseColor("#50FA7B"));
-            } else if ("expense".equalsIgnoreCase(entry.type)) {
-                tagView.setText("[EXPENSE // #expense]");
-                tagView.setTextColor(Color.parseColor("#BD93F9"));
-            } else {
-                tagView.setText("[JOURNAL // STREAM]");
-                tagView.setTextColor(Color.parseColor("#FFC86B"));
+                            TextView tagView = new TextView(ctx);
+                            tagView.setTextSize(9);
+                            tagView.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+
+                            if ("task".equalsIgnoreCase(entry.type)) {
+                                tagView.setText(entry.isDone() ? "[TASK // DONE]" : "[TASK // TODO]");
+                                tagView.setTextColor(entry.isDone() ? Color.parseColor("#8892B0") : Color.parseColor("#50FA7B"));
+                            } else if ("expense".equalsIgnoreCase(entry.type)) {
+                                tagView.setText("[EXPENSE // #expense]");
+                                tagView.setTextColor(Color.parseColor("#BD93F9"));
+                            } else {
+                                tagView.setText("[JOURNAL // STREAM]");
+                                tagView.setTextColor(Color.parseColor("#FFC86B"));
+                            }
+                            tagRow.addView(tagView);
+
+                            TextView timeView = new TextView(ctx);
+                            timeView.setText("  " + timeFormat.format(new Date(entry.timestamp)));
+                            timeView.setTextSize(9);
+                            timeView.setTypeface(Typeface.MONOSPACE);
+                            timeView.setTextColor(Color.parseColor("#555555"));
+                            tagRow.addView(timeView);
+
+                            card.addView(tagRow);
+
+                            // Body
+                            TextView bodyView = new TextView(ctx);
+                            bodyView.setText(entry.content);
+                            bodyView.setTextSize(12);
+                            bodyView.setTypeface(Typeface.MONOSPACE);
+                            bodyView.setTextColor(Color.WHITE);
+                            bodyView.setPadding(0, UiUtils.dpToPx(ctx, 6), 0, 0);
+                            card.addView(bodyView);
+
+                            streamContainer.addView(card);
+                        }
+                    }
+                });
             }
-            tagRow.addView(tagView);
-
-            TextView timeView = new TextView(getContext());
-            timeView.setText("  " + timeFormat.format(new Date(entry.timestamp)));
-            timeView.setTextSize(10);
-            timeView.setTypeface(Typeface.MONOSPACE);
-            timeView.setTextColor(Color.parseColor("#555555"));
-            tagRow.addView(timeView);
-
-            card.addView(tagRow);
-
-            // Content text
-            TextView bodyView = new TextView(getContext());
-            bodyView.setText(entry.content);
-            bodyView.setTextSize(13);
-            bodyView.setTypeface(Typeface.MONOSPACE);
-            bodyView.setTextColor(Color.WHITE);
-            bodyView.setPadding(0, 8, 0, 0);
-            card.addView(bodyView);
-
-            streamContainer.addView(card);
-        }
+        });
     }
 }

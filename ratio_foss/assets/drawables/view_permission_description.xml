@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.blloc.bllocjavatree.ui.themes.customviews.ThemeableTextView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:textSize="@dimen/permission_item_text"
+    android:id="@+id/permissions_info"
+    android:paddingTop="@dimen/settings_permission_info_marginT"
+    android:paddingBottom="@dimen/settings_permission_info_marginB"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/placeholder"
+    android:fontFamily="@font/medium"
+    app:textColor_DARK="@color/white"
+    app:textColor_FOCUS="@color/white"
+    app:textColor_LIGHT="@color/white"
+    app:textColor_SUN="@color/gray_50"/>

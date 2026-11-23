@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:left="@dimen/blloc_slide_selector_selector_padding"
+        android:top="@dimen/blloc_slide_selector_selector_padding"
+        android:right="@dimen/blloc_slide_selector_selector_padding"
+        android:bottom="@dimen/blloc_slide_selector_selector_padding">
+        <shape>
+            <solid android:color="@color/gray_20"/>
+            <corners android:radius="20dp"/>
+        </shape>
+    </item>
+</layer-list>

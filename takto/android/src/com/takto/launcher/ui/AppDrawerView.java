@@ -1,7 +1,9 @@
 package com.takto.launcher.ui;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Color;
@@ -13,6 +15,8 @@ import android.widget.BaseAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import com.takto.launcher.util.AppExecutors;
+import com.takto.launcher.util.UiUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -21,6 +25,7 @@ import java.util.Locale;
 
 /**
  * AppDrawerView: Right page application registry & fast launcher.
+ * Loads apps asynchronously off the main thread and reacts to package change events.
  */
 public class AppDrawerView extends LinearLayout {
 
@@ -34,6 +39,7 @@ public class AppDrawerView extends LinearLayout {
     private final List<AppEntry> filteredApps = new ArrayList<>();
     private ListView listView;
     private AppListAdapter adapter;
+    private BroadcastReceiver packageReceiver;
 
     public AppDrawerView(Context context) {
         super(context);
@@ -41,29 +47,31 @@ public class AppDrawerView extends LinearLayout {
     }
 
     private GradientDrawable createItemDrawable() {
+        Context ctx = getContext();
         GradientDrawable gd = new GradientDrawable();
         gd.setColor(Color.parseColor("#080A0E"));
-        gd.setStroke(1, Color.parseColor("#151B23"));
-        gd.setCornerRadius(6f);
+        gd.setStroke(UiUtils.dpToPx(ctx, 1), Color.parseColor("#151B23"));
+        gd.setCornerRadius(UiUtils.dpToPx(ctx, 6));
         return gd;
     }
 
     private void init() {
+        Context ctx = getContext();
         setOrientation(VERTICAL);
         setBackgroundColor(Color.BLACK);
-        setPadding(32, 24, 32, 120);
+        setPadding(UiUtils.dpToPx(ctx, 20), UiUtils.dpToPx(ctx, 16), UiUtils.dpToPx(ctx, 20), UiUtils.dpToPx(ctx, 90));
 
-        TextView header = new TextView(getContext());
+        TextView header = new TextView(ctx);
         header.setText("// APPLICATION REGISTRY");
-        header.setTextSize(11);
+        header.setTextSize(10);
         header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         header.setTextColor(Color.parseColor("#DF9E38"));
-        header.setPadding(0, 0, 0, 16);
+        header.setPadding(0, 0, 0, UiUtils.dpToPx(ctx, 12));
         addView(header);
 
-        listView = new ListView(getContext());
+        listView = new ListView(ctx);
         listView.setDivider(null);
-        listView.setDividerHeight(10);
+        listView.setDividerHeight(UiUtils.dpToPx(ctx, 8));
         listView.setVerticalScrollBarEnabled(false);
 
         adapter = new AppListAdapter();
@@ -71,35 +79,76 @@ public class AppDrawerView extends LinearLayout {
         addView(listView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 
         reloadApps();
+        registerPackageReceiver();
     }
 
     public void reloadApps() {
-        PackageManager pm = getContext().getPackageManager();
-        Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
-        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-
-        List<ResolveInfo> pkgAppsList = pm.queryIntentActivities(mainIntent, 0);
-        allApps.clear();
-
-        for (ResolveInfo info : pkgAppsList) {
-            if (info.activityInfo.packageName.equals(getContext().getPackageName())) {
-                continue;
-            }
-            AppEntry entry = new AppEntry();
-            entry.label = info.loadLabel(pm).toString();
-            entry.packageName = info.activityInfo.packageName;
-            entry.activityName = info.activityInfo.name;
-            allApps.add(entry);
-        }
-
-        Collections.sort(allApps, new Comparator<AppEntry>() {
+        AppExecutors.getInstance().diskIO().execute(new Runnable() {
             @Override
-            public int compare(AppEntry a, AppEntry b) {
-                return a.label.compareToIgnoreCase(b.label);
+            public void run() {
+                PackageManager pm = getContext().getPackageManager();
+                Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+                mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+
+                List<ResolveInfo> pkgAppsList = pm.queryIntentActivities(mainIntent, 0);
+                final List<AppEntry> loaded = new ArrayList<>();
+
+                for (ResolveInfo info : pkgAppsList) {
+                    if (info.activityInfo.packageName.equals(getContext().getPackageName())) {
+                        continue;
+                    }
+                    AppEntry entry = new AppEntry();
+                    entry.label = info.loadLabel(pm).toString();
+                    entry.packageName = info.activityInfo.packageName;
+                    entry.activityName = info.activityInfo.name;
+                    loaded.add(entry);
+                }
+
+                Collections.sort(loaded, new Comparator<AppEntry>() {
+                    @Override
+                    public int compare(AppEntry a, AppEntry b) {
+                        return a.label.compareToIgnoreCase(b.label);
+                    }
+                });
+
+                AppExecutors.getInstance().mainThread().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        allApps.clear();
+                        allApps.addAll(loaded);
+                        filter(null);
+                    }
+                });
             }
         });
+    }
 
-        filter(null);
+    private void registerPackageReceiver() {
+        packageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                reloadApps();
+            }
+        };
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_PACKAGE_ADDED);
+        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+        filter.addAction(Intent.ACTION_PACKAGE_CHANGED);
+        filter.addDataScheme("package");
+        try {
+            getContext().registerReceiver(packageReceiver, filter);
+        } catch (Exception ignored) {
+        }
+    }
+
+    public void cleanup() {
+        if (packageReceiver != null) {
+            try {
+                getContext().unregisterReceiver(packageReceiver);
+            } catch (Exception ignored) {
+            }
+            packageReceiver = null;
+        }
     }
 
     public void filter(String query) {
@@ -136,12 +185,13 @@ public class AppDrawerView extends LinearLayout {
         @Override
         public View getView(int pos, View convertView, ViewGroup parent) {
             TextView tv = (TextView) convertView;
+            Context ctx = getContext();
             if (tv == null) {
-                tv = new TextView(getContext());
-                tv.setTextSize(13);
+                tv = new TextView(ctx);
+                tv.setTextSize(12);
                 tv.setTypeface(Typeface.MONOSPACE);
                 tv.setTextColor(Color.WHITE);
-                tv.setPadding(24, 18, 24, 18);
+                tv.setPadding(UiUtils.dpToPx(ctx, 16), UiUtils.dpToPx(ctx, 14), UiUtils.dpToPx(ctx, 16), UiUtils.dpToPx(ctx, 14));
                 tv.setBackground(createItemDrawable());
             }
 

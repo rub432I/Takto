@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
+    android:paddingHorizontal="15dp">
+    <com.blloc.uicomponents.old.customviews.ThemeableTextView
+        android:textSize="11sp"
+        android:gravity="center"
+        android:id="@+id/nameTV"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="hey"
+        android:fontFamily="@font/bold"
+        android:paddingVertical="12dp"
+        app:textColor_DARK="@color/wallpaper_title_dark"
+        app:textColor_FOCUS="@color/wallpaper_title_focus"
+        app:textColor_LIGHT="@color/wallpaper_title_light"
+        app:textColor_SUN="@color/wallpaper_title_sun"/>
+    <com.blloc.uicomponents.viewgroups.RoundedCornersLayout
+        android:id="@+id/wallpapers_container"
+        android:layout_width="150dp"
+        android:layout_height="300dp"
+        android:foreground="@drawable/foreground_selected_wallpaper"
+        app:cornerRadius="@dimen/wallpaper_chooser_item_corner_radius_plus_half_stroke">
+        <ImageView
+            android:id="@+id/image_right"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"/>
+        <com.bllocosn.ui.main.widgets.wallpaperchooser.HalfCroppedImageView
+            android:id="@+id/image_left"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"/>
+    </com.blloc.uicomponents.viewgroups.RoundedCornersLayout>
+</LinearLayout>

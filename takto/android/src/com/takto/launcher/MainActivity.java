@@ -3,9 +3,10 @@ package com.takto.launcher;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
@@ -22,15 +23,14 @@ import com.takto.launcher.ui.AppDrawerView;
 import com.takto.launcher.ui.BottomBarView;
 import com.takto.launcher.ui.InternalThreadView;
 import com.takto.launcher.ui.MetroDashboardView;
+import com.takto.launcher.util.AppExecutors;
 import com.takto.launcher.util.LogseqSync;
+import com.takto.launcher.util.UiUtils;
 
 /**
  * MainActivity: Takto Launcher Root Activity
- * Orchestrates the 3-page horizontal matrix:
- *   [ Page 0: Metro Dashboard ]
- *   [ Page 1: Internal Thread (Self-Chat) ]
- *   [ Page 2: Application Registry ]
- * Anchored by the universal persistent BottomBarView and Dual-Write SQLite/Logseq engine.
+ * Connects the 3-page horizontal matrix with the persistent bottom capture bar
+ * and asynchronous dual-write engine (SQLite + Logseq Markdown).
  */
 public class MainActivity extends Activity {
 
@@ -55,8 +55,10 @@ public class MainActivity extends Activity {
 
         // 1. Edge-to-Edge Pure OLED Black
         getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-        getWindow().setStatusBarColor(Color.BLACK);
-        getWindow().setNavigationBarColor(Color.BLACK);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setStatusBarColor(Color.BLACK);
+            getWindow().setNavigationBarColor(Color.BLACK);
+        }
 
         dbHelper = TaktoDbHelper.getInstance(this);
 
@@ -116,10 +118,11 @@ public class MainActivity extends Activity {
         // 6. Wire Events & Listeners
         wireEventListeners();
 
-        // 7. Scroll to Center Page (Internal Thread) after layout
+        // 7. Scroll to Center Page (Internal Thread) after initial layout pass
         horizontalPager.post(new Runnable() {
             @Override
             public void run() {
+                updatePageDimensions();
                 horizontalPager.scrollTo(screenWidth, 0);
                 highlightTab(1);
             }
@@ -129,11 +132,37 @@ public class MainActivity extends Activity {
         refreshAllViews();
     }
 
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        horizontalPager.post(new Runnable() {
+            @Override
+            public void run() {
+                updatePageDimensions();
+                horizontalPager.scrollTo(currentPage * screenWidth, 0);
+            }
+        });
+    }
+
+    private void updatePageDimensions() {
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+        screenWidth = dm.widthPixels;
+
+        for (int i = 0; i < pagesContainer.getChildCount(); i++) {
+            View child = pagesContainer.getChildAt(i);
+            ViewGroup.LayoutParams lp = child.getLayoutParams();
+            if (lp.width != screenWidth) {
+                lp.width = screenWidth;
+                child.setLayoutParams(lp);
+            }
+        }
+    }
+
     private LinearLayout createTopTabIndicator() {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER);
-        row.setPadding(24, 40, 24, 8);
+        row.setPadding(UiUtils.dpToPx(this, 16), UiUtils.dpToPx(this, 28), UiUtils.dpToPx(this, 16), UiUtils.dpToPx(this, 4));
         row.setBackgroundColor(Color.BLACK);
         row.setWeightSum(3.0f);
 
@@ -155,7 +184,7 @@ public class MainActivity extends Activity {
         tv.setTextSize(11);
         tv.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         tv.setGravity(Gravity.CENTER);
-        tv.setPadding(12, 12, 12, 12);
+        tv.setPadding(UiUtils.dpToPx(this, 8), UiUtils.dpToPx(this, 8), UiUtils.dpToPx(this, 8), UiUtils.dpToPx(this, 8));
         tv.setTextColor(Color.parseColor("#8892B0"));
 
         tv.setOnClickListener(new View.OnClickListener() {
@@ -181,58 +210,74 @@ public class MainActivity extends Activity {
     }
 
     private void wireEventListeners() {
-        // Page scroll change listener
-        horizontalPager.setOnScrollChangeListener(new View.OnScrollChangeListener() {
-            @Override
-            public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
-                int page = (scrollX + screenWidth / 2) / screenWidth;
-                if (page != currentPage) {
-                    highlightTab(page);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            horizontalPager.setOnScrollChangeListener(new View.OnScrollChangeListener() {
+                @Override
+                public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+                    int page = (scrollX + screenWidth / 2) / Math.max(1, screenWidth);
+                    if (page != currentPage) {
+                        highlightTab(page);
+                    }
                 }
-            }
-        });
+            });
+        }
 
-        // Task toggle listener in MetroDashboardView
+        // Dual-Write Task Toggle Listener: Updates both SQLite and Logseq file off main thread
         metroView.setOnTaskActionListener(new MetroDashboardView.OnTaskActionListener() {
             @Override
-            public void onTaskToggled(long taskId, boolean isDone) {
-                dbHelper.toggleTaskStatus(taskId, isDone);
-                triggerHaptic();
-                refreshAllViews();
+            public void onTaskToggled(final long taskId, final String content, final boolean isDone) {
+                AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        // 1. Update SQLite
+                        dbHelper.toggleTaskStatus(taskId, isDone);
+                        // 2. Update Logseq Markdown file
+                        LogseqSync.updateTaskStatus(MainActivity.this, content, isDone);
+
+                        AppExecutors.getInstance().mainThread().execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                triggerHaptic();
+                                refreshAllViews();
+                            }
+                        });
+                    }
+                });
             }
         });
 
         // BottomBar capture and routing listeners
         bottomBar.setOnBottomActionListener(new BottomBarView.OnBottomActionListener() {
             @Override
-            public void onCaptureEntry(String type, String content) {
-                // 1. Insert into SQLite
-                String status = "task".equalsIgnoreCase(type) ? "todo" : "logged";
-                dbHelper.insertEntry(type, content, status);
+            public void onCaptureEntry(final String type, final String content) {
+                AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        // 1. Insert into SQLite
+                        String status = "task".equalsIgnoreCase(type) ? "todo" : "logged";
+                        long timestamp = System.currentTimeMillis();
+                        dbHelper.insertEntry(type, content, status);
 
-                // 2. Dual-Write to Logseq Markdown
-                String logseqLine = LogseqSync.formatLogseqLine(type, content, status, System.currentTimeMillis());
-                LogseqSync.appendToLocalLogseqFile(MainActivity.this, logseqLine);
+                        // 2. Dual-Write to Logseq Markdown
+                        LogseqSync.appendEntry(MainActivity.this, type, content, status, timestamp);
 
-                // 3. Feedback & Refresh
-                triggerHaptic();
-                refreshAllViews();
-
-                // If captured a thought or task, switch to thread view so user sees it instantly
-                if (currentPage == 2) {
-                    smoothScrollToPage(1);
-                }
+                        AppExecutors.getInstance().mainThread().execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                triggerHaptic();
+                                refreshAllViews();
+                                if (currentPage == 2) {
+                                    smoothScrollToPage(1);
+                                }
+                            }
+                        });
+                    }
+                });
             }
 
             @Override
             public void onFilterApps(String query) {
                 drawerView.filter(query);
-                if (query != null && !query.isEmpty() && !query.startsWith("j ") && !query.startsWith("t ") && !query.startsWith("$ ")) {
-                    // Auto switch to App Drawer page when user is searching apps
-                    if (currentPage != 2) {
-                        smoothScrollToPage(2);
-                    }
-                }
             }
 
             @Override
@@ -244,6 +289,8 @@ public class MainActivity extends Activity {
                         startActivity(intent);
                         bottomBar.clearInput();
                     }
+                } else if (currentPage != 2) {
+                    smoothScrollToPage(2);
                 }
             }
         });
@@ -258,7 +305,11 @@ public class MainActivity extends Activity {
         try {
             Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
             if (v != null && v.hasVibrator()) {
-                v.vibrate(VibrationEffect.createOneShot(25, VibrationEffect.DEFAULT_AMPLITUDE));
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    v.vibrate(VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE));
+                } else {
+                    v.vibrate(20);
+                }
             }
         } catch (Exception ignored) {
         }
@@ -272,11 +323,18 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        // Pressing Back on Metro or Apps returns to Center Thread
         if (currentPage != 1) {
             smoothScrollToPage(1);
         } else {
-            // Already home
+            super.onBackPressed();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (drawerView != null) {
+            drawerView.cleanup();
         }
     }
 }

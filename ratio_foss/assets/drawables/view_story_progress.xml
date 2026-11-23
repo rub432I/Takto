@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:clipChildren="true"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="@dimen/progress_bar_corners">
+    <View
+        android:id="@+id/story_background"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/progress_bar_height"
+        android:backgroundTint="@color/story_background"/>
+    <View
+        android:id="@+id/story_progress"
+        android:visibility="invisible"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/progress_bar_height"
+        android:backgroundTint="@color/story_progress"/>
+    <View
+        android:id="@+id/max_progress"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/progress_bar_height"
+        android:backgroundTint="@color/white"/>
+</androidx.cardview.widget.CardView>

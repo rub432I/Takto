@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingHorizontal="@dimen/tile_cell_padding_horizontal"
+    android:paddingVertical="@dimen/tile_cell_padding_vertical">
+    <com.blloc.uicomponents.view.BlurTileView
+        android:id="@+id/tileView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:expended="true"/>
+    <ImageView
+        android:id="@+id/borderStroke"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</FrameLayout>

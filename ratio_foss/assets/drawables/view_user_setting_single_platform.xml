@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="center_vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingVertical="5dp">
+    <ImageView
+        android:id="@+id/icon"
+        android:layout_width="@dimen/user_settings_platform_icon"
+        android:layout_height="@dimen/user_settings_platform_icon"
+        android:layout_marginRight="@dimen/user_settings_platform_icon_margin"/>
+    <TextView
+        android:textSize="@dimen/user_settings_platform_text"
+        android:id="@+id/label"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:fontFamily="@font/medium"/>
+    <com.blloc.bllocjavatree.ui.utils.BllocSwitch
+        android:id="@+id/bllocswitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+</LinearLayout>

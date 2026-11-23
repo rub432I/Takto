@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.blloc.uicomponents.old.customviews.ThemeableBlurView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:clipChildren="true"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/input_bar_margin"
+    app:blurDisabledColor_DARK="@color/inputbar_opaque_DARK"
+    app:blurDisabledColor_FOCUS="@color/inputbar_opaque_FOCUS"
+    app:blurDisabledColor_LIGHT="@color/inputbar_opaque_LIGHT"
+    app:blurDisabledColor_SUN="@color/inputbar_opaque_SUN"
+    app:cornerRadius="@dimen/floating_prompt_corners"
+    app:foregroundColor_DARK="@color/inputbar_DARK"
+    app:foregroundColor_FOCUS="@color/inputbar_FOCUS"
+    app:foregroundColor_LIGHT="@color/inputbar_LIGHT"
+    app:foregroundColor_SUN="@color/inputbar_SUN">
+    <LinearLayout
+        android:orientation="vertical"
+        android:id="@+id/fp_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:animateLayoutChanges="true"/>
+</com.blloc.uicomponents.old.customviews.ThemeableBlurView>

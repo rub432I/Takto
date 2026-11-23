@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <LinearLayout
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="5dp"
+        android:paddingHorizontal="40dp">
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/step_animation"
+            android:visibility="visible"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_marginBottom="50dp"
+            app:lottie_autoPlay="true"
+            app:lottie_repeatCount="-1"
+            app:lottie_repeatMode="restart"/>
+        <TextView
+            android:textSize="30dp"
+            android:textColor="#343434"
+            android:gravity="center_horizontal"
+            android:id="@+id/title_tv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/heavy"/>
+        <TextView
+            android:textColor="#343434"
+            android:gravity="center_horizontal"
+            android:id="@+id/description_tv"
+            android:paddingTop="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/heavy"/>
+    </LinearLayout>
+</merge>

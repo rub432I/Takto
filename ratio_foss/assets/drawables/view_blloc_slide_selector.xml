@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/time_selector"
+    android:background="@drawable/view_blloc_slide_selector_background"
+    android:clipChildren="false"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_alignParentBottom="true"
+    android:layout_centerHorizontal="true">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="2">
+        <View
+            android:id="@+id/selector_background"
+            android:background="@drawable/view_blloc_slide_selector_item_selected_background"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"/>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <TextView
+            android:textSize="13dp"
+            android:textColor="@color/gray_60"
+            android:gravity="center"
+            android:id="@+id/selector_option_1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:text="Today"
+            android:layout_weight="1"
+            android:fontFamily="@font/demi_bold"/>
+        <TextView
+            android:textSize="13dp"
+            android:textColor="@color/gray_60"
+            android:gravity="center"
+            android:id="@+id/selector_option_2"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:text="Last week"
+            android:layout_weight="1"
+            android:layout_alignParentRight="true"
+            android:fontFamily="@font/demi_bold"/>
+    </LinearLayout>
+</RelativeLayout>

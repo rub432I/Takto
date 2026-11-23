@@ -14,15 +14,11 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.takto.launcher.util.MathEvaluator;
+import com.takto.launcher.util.UiUtils;
 
 /**
- * BottomBarView: Persistent Universal Capture Surface & Predictive Router
- * Supports:
- *   j <note>   -> Logseq Journal Thought
- *   t <task>   -> Logseq Task (- TODO)
- *   $ <exp>    -> Logseq Expense (- #expense)
- *   <math>     -> Real-time offline arithmetic calculation
- *   <text>     -> Application search filter
+ * BottomBarView: Universal Capture Bar & Prefix Router
+ * Supports trimmed prefixes (j , t , $ ), offline math calculation, and app search.
  */
 public class BottomBarView extends LinearLayout {
 
@@ -50,40 +46,41 @@ public class BottomBarView extends LinearLayout {
     private GradientDrawable createBarDrawable() {
         GradientDrawable gd = new GradientDrawable();
         gd.setColor(Color.parseColor("#0E1218"));
-        gd.setStroke(1, Color.parseColor("#2B3545"));
-        gd.setCornerRadius(8f);
+        gd.setStroke(UiUtils.dpToPx(getContext(), 1), Color.parseColor("#2B3545"));
+        gd.setCornerRadius(UiUtils.dpToPx(getContext(), 8));
         return gd;
     }
 
     private GradientDrawable createButtonDrawable() {
         GradientDrawable gd = new GradientDrawable();
-        gd.setColor(Color.parseColor("#FFC86B")); // Takto Gold
-        gd.setCornerRadius(6f);
+        gd.setColor(Color.parseColor("#FFC86B"));
+        gd.setCornerRadius(UiUtils.dpToPx(getContext(), 6));
         return gd;
     }
 
     private void init() {
+        Context ctx = getContext();
         setOrientation(VERTICAL);
         setBackgroundColor(Color.parseColor("#000000"));
-        setPadding(24, 8, 24, 20);
+        setPadding(UiUtils.dpToPx(ctx, 16), UiUtils.dpToPx(ctx, 6), UiUtils.dpToPx(ctx, 16), UiUtils.dpToPx(ctx, 12));
 
-        // 1. Mode & Preview Chip
-        modeIndicator = new TextView(getContext());
-        modeIndicator.setText("TAKTO // UNIVERSAL CAPTURE [ j / t / $ / CALC / APPS ]");
+        // 1. Mode indicator
+        modeIndicator = new TextView(ctx);
+        modeIndicator.setText("TAKTO // CAPTURE [ j / t / $ / CALC / APPS ]");
         modeIndicator.setTextSize(9);
         modeIndicator.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         modeIndicator.setTextColor(Color.parseColor("#DF9E38"));
-        modeIndicator.setPadding(8, 0, 8, 6);
+        modeIndicator.setPadding(UiUtils.dpToPx(ctx, 4), 0, UiUtils.dpToPx(ctx, 4), UiUtils.dpToPx(ctx, 4));
         addView(modeIndicator);
 
-        // 2. Input Box Row
-        LinearLayout inputRow = new LinearLayout(getContext());
+        // 2. Input container
+        LinearLayout inputRow = new LinearLayout(ctx);
         inputRow.setOrientation(HORIZONTAL);
         inputRow.setGravity(Gravity.CENTER_VERTICAL);
         inputRow.setBackground(createBarDrawable());
-        inputRow.setPadding(16, 6, 12, 6);
+        inputRow.setPadding(UiUtils.dpToPx(ctx, 12), UiUtils.dpToPx(ctx, 4), UiUtils.dpToPx(ctx, 8), UiUtils.dpToPx(ctx, 4));
 
-        searchInput = new EditText(getContext());
+        searchInput = new EditText(ctx);
         searchInput.setHint("j note, t task, $ exp, math, or app...");
         searchInput.setHintTextColor(Color.parseColor("#555555"));
         searchInput.setTextColor(Color.WHITE);
@@ -96,20 +93,18 @@ public class BottomBarView extends LinearLayout {
         LinearLayout.LayoutParams inputParams = new LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1.0f);
         inputRow.addView(searchInput, inputParams);
 
-        // 3. Action Submit Button
-        actionButton = new TextView(getContext());
+        // 3. Action button
+        actionButton = new TextView(ctx);
         actionButton.setText("EXEC");
         actionButton.setTextSize(10);
         actionButton.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         actionButton.setTextColor(Color.BLACK);
         actionButton.setGravity(Gravity.CENTER);
-        actionButton.setPadding(20, 12, 20, 12);
+        actionButton.setPadding(UiUtils.dpToPx(ctx, 14), UiUtils.dpToPx(ctx, 8), UiUtils.dpToPx(ctx, 14), UiUtils.dpToPx(ctx, 8));
         actionButton.setBackground(createButtonDrawable());
         inputRow.addView(actionButton);
 
         addView(inputRow);
-
-        // Wire event listeners
         setupEvents();
     }
 
@@ -120,7 +115,7 @@ public class BottomBarView extends LinearLayout {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                updateMode(s.toString());
+                updateMode(s != null ? s.toString() : "");
             }
 
             @Override
@@ -152,24 +147,25 @@ public class BottomBarView extends LinearLayout {
         currentMathResult = null;
 
         if (trimmed.isEmpty()) {
-            modeIndicator.setText("TAKTO // UNIVERSAL CAPTURE [ j / t / $ / CALC / APPS ]");
+            modeIndicator.setText("TAKTO // CAPTURE [ j / t / $ / CALC / APPS ]");
             modeIndicator.setTextColor(Color.parseColor("#DF9E38"));
             actionButton.setText("EXEC");
             if (listener != null) listener.onFilterApps("");
             return;
         }
 
-        if (text.startsWith("j ") || text.startsWith("j\t")) {
-            modeIndicator.setText("LOGSEQ // JOURNAL STREAM [APPEND TO TODAY]");
+        // Check trimmed prefixes
+        if (trimmed.startsWith("j ") || trimmed.startsWith("j\t") || trimmed.equals("j")) {
+            modeIndicator.setText("LOGSEQ // JOURNAL STREAM [APPEND]");
             modeIndicator.setTextColor(Color.parseColor("#FFC86B"));
             actionButton.setText("LOG");
             if (listener != null) listener.onFilterApps("");
-        } else if (text.startsWith("t ") || text.startsWith("t\t")) {
+        } else if (trimmed.startsWith("t ") || trimmed.startsWith("t\t") || trimmed.equals("t")) {
             modeIndicator.setText("LOGSEQ // TASK STREAM [- TODO]");
             modeIndicator.setTextColor(Color.parseColor("#50FA7B"));
             actionButton.setText("TASK");
             if (listener != null) listener.onFilterApps("");
-        } else if (text.startsWith("$ ") || text.startsWith("$\t")) {
+        } else if (trimmed.startsWith("$ ") || trimmed.startsWith("$\t") || trimmed.equals("$")) {
             modeIndicator.setText("LOGSEQ // EXPENSE STREAM [- #expense]");
             modeIndicator.setTextColor(Color.parseColor("#BD93F9"));
             actionButton.setText("EXP");
@@ -178,15 +174,17 @@ public class BottomBarView extends LinearLayout {
             String mathRes = MathEvaluator.evaluate(trimmed);
             if (mathRes != null) {
                 currentMathResult = mathRes;
-                modeIndicator.setText("CALC // OFFLINE RESULT: = " + mathRes);
+                modeIndicator.setText("CALC // RESULT: = " + mathRes);
                 modeIndicator.setTextColor(Color.parseColor("#50FA7B"));
                 actionButton.setText("=");
             } else {
                 modeIndicator.setText("CALC // EVALUATING...");
                 modeIndicator.setTextColor(Color.parseColor("#FFC86B"));
+                actionButton.setText("CALC");
             }
+            if (listener != null) listener.onFilterApps("");
         } else {
-            modeIndicator.setText("APPLICATION // REAL-TIME FILTER");
+            modeIndicator.setText("APPLICATION // FILTER: " + trimmed);
             modeIndicator.setTextColor(Color.parseColor("#8892B0"));
             actionButton.setText("LAUNCH");
             if (listener != null) listener.onFilterApps(trimmed);
@@ -198,30 +196,28 @@ public class BottomBarView extends LinearLayout {
         String trimmed = raw.trim();
         if (trimmed.isEmpty()) return;
 
-        if (raw.startsWith("j ") || raw.startsWith("j\t")) {
-            String content = raw.substring(2).trim();
+        if (trimmed.startsWith("j ") || trimmed.startsWith("j\t")) {
+            String content = trimmed.substring(2).trim();
             if (!content.isEmpty() && listener != null) {
                 listener.onCaptureEntry("journal", content);
                 clearInput();
             }
-        } else if (raw.startsWith("t ") || raw.startsWith("t\t")) {
-            String content = raw.substring(2).trim();
+        } else if (trimmed.startsWith("t ") || trimmed.startsWith("t\t")) {
+            String content = trimmed.substring(2).trim();
             if (!content.isEmpty() && listener != null) {
                 listener.onCaptureEntry("task", content);
                 clearInput();
             }
-        } else if (raw.startsWith("$ ") || raw.startsWith("$\t")) {
-            String content = raw.substring(2).trim();
+        } else if (trimmed.startsWith("$ ") || trimmed.startsWith("$\t")) {
+            String content = trimmed.substring(2).trim();
             if (!content.isEmpty() && listener != null) {
                 listener.onCaptureEntry("expense", content);
                 clearInput();
             }
         } else if (currentMathResult != null) {
-            // Replace input with result or log it
             searchInput.setText(currentMathResult);
             searchInput.setSelection(currentMathResult.length());
         } else {
-            // Launch top matching app
             if (listener != null) {
                 listener.onLaunchTopMatch();
             }

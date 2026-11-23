@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:padding="5dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.blloc.uicomponents.old.customviews.ThemeableSelectableLinearLayout
+        android:gravity="center"
+        android:id="@+id/language_item"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="3dp"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="5dp"
+        app:selectableCornerRadius="50dp"
+        app:selectedBackground_DARK="@color/onboarding_language_button_dark"
+        app:selectedBackground_FOCUS="@color/onboarding_language_button_dark"
+        app:selectedBackground_LIGHT="@color/onboarding_language_button_light"
+        app:selectedBackground_SUN="@color/onboarding_language_button_light"
+        app:unselectedBackground_DARK="@color/onboarding_language_button_dark_unselected"
+        app:unselectedBackground_FOCUS="@color/onboarding_language_button_dark_unselected"
+        app:unselectedBackground_LIGHT="@color/onboarding_language_button_light_unselected"
+        app:unselectedBackground_SUN="@color/onboarding_language_button_light_unselected">
+        <com.blloc.uicomponents.old.customviews.ThemeableTextView
+            android:textSize="14sp"
+            android:gravity="center"
+            android:id="@+id/language_item_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/demi_bold"
+            app:textColor_DARK="@color/black"
+            app:textColor_FOCUS="@color/black"
+            app:textColor_LIGHT="@color/black"
+            app:textColor_SUN="@color/black"/>
+    </com.blloc.uicomponents.old.customviews.ThemeableSelectableLinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <com.blloc.bllocjavatree.ui.themes.customviews.ThemeableTextView
+        android:textSize="@dimen/user_settings_platform_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/user_settings_platform_title_margin"
+        android:text="@string/tree.onboarding.messaging_apps.title"
+        android:fontFamily="@font/extra_bold"
+        app:textColor_DARK="@color/white"
+        app:textColor_FOCUS="@color/white"
+        app:textColor_LIGHT="@color/white"
+        app:textColor_SUN="#4d4d4d"/>
+    <com.blloc.bllocjavatree.ui.sections.conversation.settings.SinglePlatformView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:service_id="@string/tree.untranslatable.id_messenger"/>
+    <com.blloc.bllocjavatree.ui.sections.conversation.settings.SinglePlatformView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:service_id="@string/tree.untranslatable.id_telegram"/>
+    <com.blloc.bllocjavatree.ui.sections.conversation.settings.SinglePlatformView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:service_id="@string/tree.untranslatable.id_whatsapp"/>
+    <com.blloc.bllocjavatree.ui.sections.conversation.settings.SinglePlatformView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:service_id="@string/tree.untranslatable.id_instagram"/>
+</LinearLayout>

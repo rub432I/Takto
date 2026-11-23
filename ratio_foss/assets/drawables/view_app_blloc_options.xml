@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:background="@drawable/view_app_blloc_options_background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <ImageView
+        android:id="@+id/color_btn"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:src="@drawable/view_app_edit_screen_icon_color"
+        android:layout_weight="1"
+        android:paddingVertical="20dp"/>
+    <ImageView
+        android:id="@+id/hide_btn"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:src="@drawable/view_app_edit_screen_icon_hide"
+        android:layout_weight="1"
+        android:paddingVertical="20dp"/>
+    <ImageView
+        android:id="@+id/lock_btn"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:src="@drawable/view_app_edit_screen_icon_lock"
+        android:layout_weight="1"
+        android:paddingVertical="20dp"/>
+    <ImageView
+        android:id="@+id/mute_btn"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:src="@drawable/view_app_edit_screen_icon_mute"
+        android:layout_weight="1"
+        android:paddingVertical="20dp"/>
+</LinearLayout>

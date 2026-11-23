@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.blloc.uicomponents.old.customviews.ThemeableLinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:gravity="top|center_horizontal"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:maxHeight="500dp"
+    app:linearBackground_DARK="@color/bottom_sheet_background_dark"
+    app:linearBackground_FOCUS="@color/bottom_sheet_background_focus"
+    app:linearBackground_LIGHT="@color/bottom_sheet_background_light"
+    app:linearBackground_SUN="@color/bottom_sheet_background_sun"
+    app:linearLayout_corner_radius="@dimen/bottom_sheet_corners">
+    <com.blloc.uicomponents.old.customviews.ThemeableLinearLayout
+        android:layout_width="@dimen/bottom_sheet_handle_width"
+        android:layout_height="@dimen/bottom_sheet_handle_height"
+        android:layout_marginTop="@dimen/bottom_sheet_handle_marginT"
+        android:layout_marginBottom="@dimen/bottom_sheet_handle_marginB"
+        app:linearBackground_DARK="@color/bottom_sheet_handle_dark"
+        app:linearBackground_FOCUS="@color/bottom_sheet_handle_focus"
+        app:linearBackground_LIGHT="@color/bottom_sheet_handle_light"
+        app:linearBackground_SUN="@color/bottom_sheet_handle_sun"
+        app:linearLayout_corner_radius="@dimen/bottom_sheet_handle_corners"/>
+    <androidx.core.widget.NestedScrollView
+        android:gravity="top|center_horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:orientation="vertical"
+            android:id="@+id/bottom_sheet_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </androidx.core.widget.NestedScrollView>
+</com.blloc.uicomponents.old.customviews.ThemeableLinearLayout>

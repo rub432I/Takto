@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:id="@+id/button_root"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <com.blloc.kotlintree.ui.views.ThemeableButton
+        android:id="@+id/button_icon"
+        android:layout_width="@dimen/button_size"
+        android:layout_height="@dimen/button_size"
+        android:src="@drawable/ic_confirm"
+        app:buttonBorderWidth="@dimen/button_border_width"
+        app:buttonFill_DARK="@color/buttonFill_dark"
+        app:buttonFill_FOCUS="@color/buttonFill_focus"
+        app:buttonFill_LIGHT="@color/buttonFill_light"
+        app:buttonFill_SUN="@color/buttonFill_sun"
+        app:buttonIcon_DARK="@color/buttonIcon_dark"
+        app:buttonIcon_FOCUS="@color/buttonIcon_focus"
+        app:buttonIcon_LIGHT="@color/buttonIcon_light"
+        app:buttonIcon_SUN="@color/buttonIcon_sun"/>
+    <com.blloc.uicomponents.old.customviews.ThemeableTextView
+        android:textSize="@dimen/button_text"
+        android:gravity="center"
+        android:layout_gravity="center"
+        android:id="@+id/button_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:minWidth="90dp"
+        android:maxLines="2"
+        android:fontFamily="@font/medium"
+        android:paddingHorizontal="@dimen/conversation_option_item_hPadding"
+        android:paddingVertical="@dimen/conversation_option_item_vPadding"
+        app:textColor_DARK="@color/buttonFill_dark"
+        app:textColor_FOCUS="@color/buttonFill_focus"
+        app:textColor_LIGHT="@color/buttonFill_light"
+        app:textColor_SUN="@color/buttonFill_sun"/>
+</LinearLayout>

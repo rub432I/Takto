@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.blloc.uicomponents.old.customviews.ThemeableTextView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:textSize="20sp"
+    android:id="@+id/header_label"
+    android:paddingTop="16dp"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:fontFamily="@font/heavy"
+    app:textColor_DARK="@color/bottom_sheet_text_dark"
+    app:textColor_FOCUS="@color/bottom_sheet_text_focus"
+    app:textColor_LIGHT="@color/bottom_sheet_text_light"
+    app:textColor_SUN="@color/bottom_sheet_text_sun"/>

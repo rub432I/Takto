@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.blloc.uicomponents.old.customviews.ThemeableBlurView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/blurView"
+    android:layout_width="wrap_content"
+    android:layout_height="@dimen/ratio_pill_height"
+    android:paddingHorizontal="@dimen/ratio_pill_padding_horizontal"
+    app:cornerRadius="@dimen/ratio_pill_corner_radius"
+    app:foregroundColorHighlighted_DARK="@color/blloc_pill_background_selected_overlay_DARK"
+    app:foregroundColorHighlighted_FOCUS="@color/blloc_pill_background_selected_overlay_FOCUS"
+    app:foregroundColorHighlighted_LIGHT="@color/blloc_pill_background_selected_overlay_LIGHT"
+    app:foregroundColorHighlighted_SUN="@color/blloc_pill_background_selected_overlay_SUN"
+    app:foregroundColor_DARK="@color/blloc_pill_background_blur_overlay_DARK"
+    app:foregroundColor_FOCUS="@color/blloc_pill_background_blur_overlay_FOCUS"
+    app:foregroundColor_LIGHT="@color/blloc_pill_background_blur_overlay_LIGHT"
+    app:foregroundColor_SUN="@color/blloc_pill_background_blur_overlay_SUN">
+    <com.blloc.uicomponents.old.customviews.ThemeableImageView
+        android:id="@+id/iconLeft"
+        android:visibility="gone"
+        android:layout_width="@dimen/ratio_pill_icon_width"
+        android:layout_height="@dimen/ratio_pill_icon_height"
+        android:layout_centerVertical="true"
+        app:imageColor_DARK="@color/blloc_pill_content_color_DARK"
+        app:imageColor_FOCUS="@color/blloc_pill_content_color_FOCUS"
+        app:imageColor_LIGHT="@color/blloc_pill_content_color_LIGHT"
+        app:imageColor_SUN="@color/blloc_pill_content_color_SUN"/>
+    <com.blloc.uicomponents.old.customviews.ThemeableTextView
+        android:textSize="@dimen/ratio_pill_label_text_size"
+        android:gravity="center_vertical"
+        android:id="@+id/label"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_toRightOf="@+id/iconLeft"
+        android:fontFamily="@font/medium"
+        android:paddingHorizontal="@dimen/ratio_pill_label_padding_horizontal"
+        app:textColor_DARK="@color/blloc_pill_content_color_DARK"
+        app:textColor_FOCUS="@color/blloc_pill_content_color_FOCUS"
+        app:textColor_LIGHT="@color/blloc_pill_content_color_LIGHT"
+        app:textColor_SUN="@color/blloc_pill_content_color_SUN"/>
+</com.blloc.uicomponents.old.customviews.ThemeableBlurView>

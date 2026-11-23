@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:background="@drawable/rounded_corners_10dp_fill"
+    android:padding="20dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:backgroundTint="@color/gray_70">
+    <TextView
+        android:textSize="25dp"
+        android:textColor="@color/gray_20"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Service manual restart required"
+        android:fontFamily="@font/bold"/>
+    <TextView
+        android:textColor="@color/gray_20"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="It seems like your Android system stopped the accessibility service.\10To fix this, please disable and then enable the tree service again."
+        android:fontFamily="@font/bold"
+        android:paddingVertical="10dp"/>
+    <TextView
+        android:textColor="@color/gray_70"
+        android:layout_gravity="right"
+        android:id="@+id/open_settings_btn"
+        android:background="@drawable/rounded_corners_50dp_fill"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Go to settings"
+        android:fontFamily="@font/heavy"
+        android:backgroundTint="@color/gray_20"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="5dp"/>
+</LinearLayout>

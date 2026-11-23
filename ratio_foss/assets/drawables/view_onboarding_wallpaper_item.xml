@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/onboarding_wallpaper_paddingH">
+    <com.blloc.uicomponents.viewgroups.RoundedCornersLayout
+        android:id="@+id/wallpapers_container"
+        android:layout_width="@dimen/onboarding_device_width"
+        android:layout_height="@dimen/onboarding_device_height"
+        android:foreground="@drawable/onboarding_wallpaper_selected_foreground"
+        app:cornerRadius="@dimen/onboarding_dock_phoneCorners">
+        <ImageView
+            android:id="@+id/image_light"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"/>
+        <ImageView
+            android:id="@+id/image_dark"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"/>
+    </com.blloc.uicomponents.viewgroups.RoundedCornersLayout>
+</LinearLayout>

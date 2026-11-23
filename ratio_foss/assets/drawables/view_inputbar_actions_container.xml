@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.blloc.bllocjavatree.ui.inputbaractions.InputBarActionsView
+        android:id="@+id/inputbar_actions"
+        android:background="@drawable/test_border_red"
+        android:layout_width="65dp"
+        android:layout_height="65dp"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:alpha="0"/>
+    <com.blloc.bllocjavatree.ui.inputbaractions.menu.InputActionsMenuView
+        android:id="@+id/inputbar_actions_menu"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:gradientEnd_DARK="@color/gradient_end_dark"
+        app:gradientEnd_FOCUS="@color/gradient_end_focus"
+        app:gradientEnd_LIGHT="@color/gradient_end_light"
+        app:gradientEnd_SUN="@color/gradient_end_sun"
+        app:gradientStart_DARK="@color/gradient_start_dark"
+        app:gradientStart_FOCUS="@color/gradient_start_focus"
+        app:gradientStart_LIGHT="@color/gradient_start_light"
+        app:gradientStart_SUN="@color/gradient_start_sun"/>
+    <LinearLayout
+        android:gravity="right"
+        android:orientation="vertical"
+        android:id="@+id/inputbar_popup"
+        android:paddingRight="9dp"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/inputbar_actions"
+        android:layout_alignParentRight="true"/>
+</RelativeLayout>

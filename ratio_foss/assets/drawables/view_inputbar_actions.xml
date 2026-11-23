@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="right"
+    android:orientation="horizontal"
+    android:layout_width="wrap_content"
+    android:layout_height="70dp"
+    android:animateLayoutChanges="true">
+    <View
+        android:id="@+id/inputbar_action_menu_btn"
+        android:paddingLeft="10dp"
+        android:paddingRight="30dp"
+        android:layout_width="60dp"
+        android:layout_height="match_parent"/>
+</LinearLayout>

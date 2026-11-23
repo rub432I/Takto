@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingTop="16dp"
+    android:paddingBottom="8dp"
+    android:layout_width="match_parent"
+    android:layout_height="30dp"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp">
+    <com.blloc.uicomponents.old.customviews.ThemeableTextView
+        android:textSize="26sp"
+        android:id="@+id/letter_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/heavy"
+        app:textColor_DARK="@color/white"
+        app:textColor_FOCUS="@color/white"
+        app:textColor_LIGHT="@color/white"
+        app:textColor_SUN="@color/gray_60"/>
+</LinearLayout>

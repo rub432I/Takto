@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/multiple_selection_scroll_container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:animateLayoutChanges="false">
+    <com.blloc.bllocjavatree.ui.sections.mainscreen.allconversations.utils.FadingEdgeLayout
+        android:id="@+id/selection_fading_edge"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:animateLayoutChanges="false"
+        app:fel_edge="right|left"
+        app:fel_size_left="8dp"
+        app:fel_size_right="8dp">
+        <HorizontalScrollView
+            android:id="@+id/multiple_selection_scrollview"
+            android:scrollbars="none"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:maxHeight="100dp"
+            android:animateLayoutChanges="false">
+            <LinearLayout
+                android:orientation="horizontal"
+                android:id="@+id/multiple_selection_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:animateLayoutChanges="false"
+                android:paddingHorizontal="10dp"/>
+        </HorizontalScrollView>
+    </com.blloc.bllocjavatree.ui.sections.mainscreen.allconversations.utils.FadingEdgeLayout>
+</LinearLayout>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:gravity="center_vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/setting_row_min_height">
+    <com.blloc.bllocjavatree.ui.themes.customviews.ThemeableImageView
+        android:layout_width="@dimen/setting_row_icon_size"
+        android:layout_height="@dimen/setting_row_icon_size"
+        android:layout_marginRight="@dimen/setting_row_icon_margin_right"
+        android:src="@drawable/ic_settings_treelock"
+        app:imageColor_DARK="@color/white"
+        app:imageColor_FOCUS="@color/white"
+        app:imageColor_LIGHT="@color/white"
+        app:imageColor_SUN="@color/gray_50"/>
+    <com.blloc.bllocjavatree.ui.themes.customviews.ThemeableTextView
+        android:textSize="@dimen/setting_row_fontsize"
+        android:textColor="#ffffff"
+        android:gravity="center_vertical"
+        android:paddingRight="20dp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/tree.settings.general.lock_tree"
+        android:layout_weight="1"
+        android:fontFamily="@font/medium"
+        app:textColor_DARK="@color/white"
+        app:textColor_FOCUS="@color/white"
+        app:textColor_LIGHT="@color/white"
+        app:textColor_SUN="@color/gray_50"/>
+    <com.blloc.bllocjavatree.ui.utils.BllocSwitch
+        android:id="@+id/biometric_lock_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:checked="false"/>
+</LinearLayout>

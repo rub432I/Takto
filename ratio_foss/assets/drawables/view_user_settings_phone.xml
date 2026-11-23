@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:id="@+id/root_ll"
+    android:layout_width="wrap_content"
+    android:layout_height="50dp">
+    <com.blloc.bllocjavatree.ui.themes.customviews.ThemeableTextView
+        android:textSize="15dp"
+        android:gravity="bottom"
+        android:id="@+id/phone_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="20dp"
+        android:text="+49 176 589-3214"
+        android:fontFamily="@font/medium"
+        app:textColor_DARK="@color/white"
+        app:textColor_FOCUS="@color/white"
+        app:textColor_LIGHT="@color/white"
+        app:textColor_SUN="#636363"/>
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <com.blloc.bllocjavatree.ui.themes.customviews.ThemeableImageView
+            android:id="@+id/btn_copy"
+            android:paddingTop="5dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/ic_copy_phone_number"
+            app:imageColor_DARK="@color/white"
+            app:imageColor_FOCUS="@color/white"
+            app:imageColor_LIGHT="@color/white"
+            app:imageColor_SUN="#636363"/>
+        <com.blloc.bllocjavatree.ui.themes.customviews.ThemeableImageView
+            android:id="@+id/btn_call"
+            android:paddingTop="5dp"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/ic_call_phone_number"
+            app:imageColor_DARK="@color/white"
+            app:imageColor_FOCUS="@color/white"
+            app:imageColor_LIGHT="@color/white"
+            app:imageColor_SUN="#636363"/>
+    </LinearLayout>
+</LinearLayout>

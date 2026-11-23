@@ -3,32 +3,39 @@ package com.takto.launcher.util;
 import java.util.Locale;
 
 /**
- * Deterministic Offline Math Evaluator
- * Recursive descent arithmetic parser for +, -, *, /, %, ^, decimals and parentheses.
- * Runs instantly without external libraries.
+ * MathEvaluator: Deterministic offline arithmetic parser.
+ * Supports +, -, *, /, %, ^, parentheses, decimals, commas, and negative numbers.
  */
 public class MathEvaluator {
 
     public static boolean isPotentialMath(String expr) {
-        if (expr == null || expr.trim().isEmpty()) {
+        if (expr == null) {
             return false;
         }
         String trimmed = expr.trim();
-        // Check if expression consists only of math symbols and digits
-        if (!trimmed.matches("^[0-9+\\-*/%^.() ]+$")) {
+        if (trimmed.isEmpty()) {
             return false;
         }
-        // Must have at least one operator to be considered an expression
-        return trimmed.matches(".*[+\\-*/%^].*") && trimmed.matches(".*[0-9].*");
+        // Must contain only math characters: digits, spaces, parentheses, operators, dots, commas
+        if (!trimmed.matches("^[0-9+\\-*/%^.(), ]+$")) {
+            return false;
+        }
+        // Must have at least one digit
+        if (!trimmed.matches(".*[0-9].*")) {
+            return false;
+        }
+        // Must contain at least one operator symbol (+ - * / % ^)
+        return trimmed.matches(".*[+\\-*/%^].*");
     }
 
     public static String evaluate(String expr) {
+        if (expr == null) return null;
+        String cleanExpr = expr.trim().replace(",", "");
         try {
-            double res = parse(expr);
+            double res = parse(cleanExpr);
             if (Double.isNaN(res) || Double.isInfinite(res)) {
                 return null;
             }
-            // Format without trailing zero if integer
             if (res == (long) res) {
                 return String.format(Locale.US, "%d", (long) res);
             } else {
@@ -59,7 +66,7 @@ public class MathEvaluator {
             double parse() {
                 nextChar();
                 double x = parseExpression();
-                if (pos < str.length()) throw new RuntimeException("Unexpected: " + (char) ch);
+                if (pos < str.length()) throw new RuntimeException("Unexpected character: " + (char) ch);
                 return x;
             }
 
@@ -78,10 +85,14 @@ public class MathEvaluator {
                     if      (eat('*')) x *= parseFactor();
                     else if (eat('/')) {
                         double divisor = parseFactor();
-                        if (divisor == 0) throw new ArithmeticException("Division by zero");
+                        if (divisor == 0.0) throw new ArithmeticException("Division by zero");
                         x /= divisor;
                     }
-                    else if (eat('%')) x %= parseFactor();
+                    else if (eat('%')) {
+                        double divisor = parseFactor();
+                        if (divisor == 0.0) throw new ArithmeticException("Modulo by zero");
+                        x %= divisor;
+                    }
                     else return x;
                 }
             }
@@ -94,12 +105,12 @@ public class MathEvaluator {
                 int startPos = this.pos;
                 if (eat('(')) {
                     x = parseExpression();
-                    if (!eat(')')) throw new RuntimeException("Missing ')'");
+                    if (!eat(')')) throw new RuntimeException("Missing closing parenthesis");
                 } else if ((ch >= '0' && ch <= '9') || ch == '.') {
                     while ((ch >= '0' && ch <= '9') || ch == '.') nextChar();
                     x = Double.parseDouble(str.substring(startPos, this.pos));
                 } else {
-                    throw new RuntimeException("Unexpected: " + (char) ch);
+                    throw new RuntimeException("Unexpected character: " + (char) ch);
                 }
 
                 if (eat('^')) x = Math.pow(x, parseFactor());
