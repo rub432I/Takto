@@ -3,10 +3,17 @@ package com.takto.launcher;
 import com.takto.launcher.db.TaktoDbHelper;
 import com.takto.launcher.util.LogseqSync;
 import com.takto.launcher.util.MathEvaluator;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * TaktoEngineTest: Automated deterministic test suite for shipping launcher logic.
- * Tests offline math parsing, expense parsing, prefix routing, and Logseq formatting.
+ * Tests math evaluation, detection, expense parsing, Logseq formatting, and dual-write file operations.
  */
 public class TaktoEngineTest {
 
@@ -20,6 +27,7 @@ public class TaktoEngineTest {
         testMathDetection();
         testExpenseParser();
         testLogseqFormatting();
+        testLogseqFileOperations();
 
         System.out.println("=================================================================");
         System.out.println("TEST RESULTS: " + testsPassed + " / " + testsRun + " PASSED (0 FAILURES)");
@@ -112,5 +120,110 @@ public class TaktoEngineTest {
         assertEquals("- #expense 50 coffee", LogseqSync.formatLogseqLine("expense", "50 coffee", "logged", 0), "Logseq: Expense");
         assertTrue(LogseqSync.formatLogseqLine("journal", "deep thought", "logged", 0).contains("deep thought"), "Logseq: Journal text");
         assertTrue(LogseqSync.formatLogseqLine("journal", "deep thought", "logged", 0).startsWith("- "), "Logseq: Journal bullet");
+    }
+
+    private static void testLogseqFileOperations() {
+        try {
+            File tempDir = new File("/data/data/com.termux/files/usr/tmp/takto_test_journal");
+            tempDir.mkdirs();
+            File testFile = new File(tempDir, "test_journal.md");
+
+            // Write initial lines
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(testFile, false))) {
+                writer.write("- 10:00 Morning thought\n");
+                writer.write("- TODO Review pull request\n");
+                writer.write("- #expense 12.50 lunch\n");
+                writer.write("- TODO Clean workspace\n");
+            }
+
+            // Read lines helper
+            List<String> lines = readLines(testFile);
+            assertEquals("4", String.valueOf(lines.size()), "FileOps: Line count check");
+
+            // Test task status toggle in file
+            boolean toggled = updateTaskInTestFile(testFile, "Review pull request", true);
+            assertTrue(toggled, "FileOps: Toggle task to DONE");
+
+            lines = readLines(testFile);
+            assertTrue(lines.contains("- DONE Review pull request"), "FileOps: Contains - DONE line");
+            assertFalse(lines.contains("- TODO Review pull request"), "FileOps: No old - TODO line");
+
+            // Test toggling back to TODO
+            boolean toggledBack = updateTaskInTestFile(testFile, "Review pull request", false);
+            assertTrue(toggledBack, "FileOps: Toggle task back to TODO");
+
+            lines = readLines(testFile);
+            assertTrue(lines.contains("- TODO Review pull request"), "FileOps: Contains - TODO line again");
+
+            // Test deleting an entry
+            boolean deleted = deleteEntryInTestFile(testFile, "12.50 lunch");
+            assertTrue(deleted, "FileOps: Delete expense entry");
+
+            lines = readLines(testFile);
+            assertEquals("3", String.valueOf(lines.size()), "FileOps: Line count after deletion");
+            assertFalse(lines.contains("- #expense 12.50 lunch"), "FileOps: Deleted line removed");
+
+            // Clean up
+            testFile.delete();
+            tempDir.delete();
+        } catch (Exception e) {
+            throw new RuntimeException("File operations test failed", e);
+        }
+    }
+
+    private static List<String> readLines(File file) throws Exception {
+        List<String> lines = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String l;
+            while ((l = reader.readLine()) != null) {
+                lines.add(l);
+            }
+        }
+        return lines;
+    }
+
+    private static boolean updateTaskInTestFile(File file, String content, boolean isDone) throws Exception {
+        List<String> lines = readLines(file);
+        boolean modified = false;
+        String oldPrefix = isDone ? "- TODO " : "- DONE ";
+        String newPrefix = isDone ? "- DONE " : "- TODO ";
+
+        for (int i = 0; i < lines.size(); i++) {
+            String l = lines.get(i);
+            if (l.trim().startsWith(oldPrefix) && l.contains(content)) {
+                lines.set(i, l.replace(oldPrefix, newPrefix));
+                modified = true;
+            }
+        }
+        if (modified) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file, false))) {
+                for (String l : lines) {
+                    writer.write(l + "\n");
+                }
+            }
+        }
+        return modified;
+    }
+
+    private static boolean deleteEntryInTestFile(File file, String content) throws Exception {
+        List<String> lines = readLines(file);
+        List<String> newLines = new ArrayList<>();
+        boolean modified = false;
+
+        for (String l : lines) {
+            if (l.contains(content)) {
+                modified = true;
+                continue;
+            }
+            newLines.add(l);
+        }
+        if (modified) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file, false))) {
+                for (String l : newLines) {
+                    writer.write(l + "\n");
+                }
+            }
+        }
+        return modified;
     }
 }

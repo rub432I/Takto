@@ -1,6 +1,8 @@
 package com.takto.launcher.ui;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -28,6 +30,7 @@ public class MetroDashboardView extends ScrollView {
 
     public interface OnTaskActionListener {
         void onTaskToggled(long taskId, String content, boolean isDone);
+        void onTaskDeleted(long taskId, String content);
     }
 
     private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.US);
@@ -66,7 +69,7 @@ public class MetroDashboardView extends ScrollView {
 
         LinearLayout contentLayout = new LinearLayout(ctx);
         contentLayout.setOrientation(LinearLayout.VERTICAL);
-        contentLayout.setPadding(UiUtils.dpToPx(ctx, 20), UiUtils.dpToPx(ctx, 16), UiUtils.dpToPx(ctx, 20), UiUtils.dpToPx(ctx, 90));
+        contentLayout.setPadding(UiUtils.dpToPx(ctx, 16), UiUtils.dpToPx(ctx, 14), UiUtils.dpToPx(ctx, 16), UiUtils.dpToPx(ctx, 90));
 
         // 1. Clock & Date
         clockView = new TextView(ctx);
@@ -81,7 +84,7 @@ public class MetroDashboardView extends ScrollView {
         dateView.setTextSize(10);
         dateView.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         dateView.setTextColor(Color.parseColor("#8892B0"));
-        dateView.setPadding(0, UiUtils.dpToPx(ctx, 2), 0, UiUtils.dpToPx(ctx, 16));
+        dateView.setPadding(0, UiUtils.dpToPx(ctx, 2), 0, UiUtils.dpToPx(ctx, 14));
         contentLayout.addView(dateView);
 
         // 2. Metrics Row (3-Column)
@@ -114,7 +117,7 @@ public class MetroDashboardView extends ScrollView {
         quickTitle.setTextSize(10);
         quickTitle.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         quickTitle.setTextColor(Color.parseColor("#DF9E38"));
-        quickTitle.setPadding(0, UiUtils.dpToPx(ctx, 18), 0, UiUtils.dpToPx(ctx, 6));
+        quickTitle.setPadding(0, UiUtils.dpToPx(ctx, 16), 0, UiUtils.dpToPx(ctx, 6));
         contentLayout.addView(quickTitle);
 
         LinearLayout quickRow = new LinearLayout(ctx);
@@ -140,7 +143,7 @@ public class MetroDashboardView extends ScrollView {
         taskSectionTitle.setTextSize(10);
         taskSectionTitle.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         taskSectionTitle.setTextColor(Color.parseColor("#50FA7B"));
-        taskSectionTitle.setPadding(0, UiUtils.dpToPx(ctx, 18), 0, UiUtils.dpToPx(ctx, 6));
+        taskSectionTitle.setPadding(0, UiUtils.dpToPx(ctx, 16), 0, UiUtils.dpToPx(ctx, 6));
         contentLayout.addView(taskSectionTitle);
 
         taskContainer = new LinearLayout(ctx);
@@ -160,7 +163,7 @@ public class MetroDashboardView extends ScrollView {
         tv.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         tv.setTextColor(Color.parseColor(colorHex));
         tv.setGravity(Gravity.CENTER);
-        tv.setPadding(UiUtils.dpToPx(ctx, 10), UiUtils.dpToPx(ctx, 14), UiUtils.dpToPx(ctx, 10), UiUtils.dpToPx(ctx, 14));
+        tv.setPadding(UiUtils.dpToPx(ctx, 10), UiUtils.dpToPx(ctx, 12), UiUtils.dpToPx(ctx, 10), UiUtils.dpToPx(ctx, 12));
         tv.setBackground(createCardDrawable("#0E1218", "#1E2630"));
         return tv;
     }
@@ -173,7 +176,7 @@ public class MetroDashboardView extends ScrollView {
         tv.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         tv.setTextColor(Color.WHITE);
         tv.setGravity(Gravity.CENTER);
-        tv.setPadding(UiUtils.dpToPx(ctx, 12), UiUtils.dpToPx(ctx, 14), UiUtils.dpToPx(ctx, 12), UiUtils.dpToPx(ctx, 14));
+        tv.setPadding(UiUtils.dpToPx(ctx, 12), UiUtils.dpToPx(ctx, 12), UiUtils.dpToPx(ctx, 12), UiUtils.dpToPx(ctx, 12));
         tv.setBackground(createCardDrawable("#0E1218", "#FFC86B"));
 
         tv.setOnClickListener(new OnClickListener() {
@@ -192,7 +195,6 @@ public class MetroDashboardView extends ScrollView {
         clockView.setText(timeFormat.format(new Date()));
         dateView.setText(dateFormat.format(new Date()).toUpperCase(Locale.US));
 
-        // Query database on background thread
         AppExecutors.getInstance().diskIO().execute(new Runnable() {
             @Override
             public void run() {
@@ -242,6 +244,14 @@ public class MetroDashboardView extends ScrollView {
                                 taskText.setPadding(UiUtils.dpToPx(getContext(), 6), 0, 0, 0);
                                 taskRow.addView(taskText);
 
+                                taskRow.setOnLongClickListener(new OnLongClickListener() {
+                                    @Override
+                                    public boolean onLongClick(View v) {
+                                        showDeleteTaskDialog(t);
+                                        return true;
+                                    }
+                                });
+
                                 taskContainer.addView(taskRow);
                             }
                         }
@@ -249,5 +259,21 @@ public class MetroDashboardView extends ScrollView {
                 });
             }
         });
+    }
+
+    private void showDeleteTaskDialog(final TaktoDbHelper.Entry task) {
+        new AlertDialog.Builder(getContext(), AlertDialog.THEME_DEVICE_DEFAULT_DARK)
+                .setTitle("Delete Task")
+                .setMessage("Delete task from SQLite and Logseq?\n\n\"" + task.content + "\"")
+                .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (taskListener != null) {
+                            taskListener.onTaskDeleted(task.id, task.content);
+                        }
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 }

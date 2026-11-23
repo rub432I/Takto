@@ -15,7 +15,6 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.takto.launcher.db.TaktoDbHelper;
@@ -23,19 +22,20 @@ import com.takto.launcher.ui.AppDrawerView;
 import com.takto.launcher.ui.BottomBarView;
 import com.takto.launcher.ui.InternalThreadView;
 import com.takto.launcher.ui.MetroDashboardView;
+import com.takto.launcher.ui.SnappingHorizontalScrollView;
 import com.takto.launcher.util.AppExecutors;
 import com.takto.launcher.util.LogseqSync;
 import com.takto.launcher.util.UiUtils;
 
 /**
  * MainActivity: Takto Launcher Root Activity
- * Connects the 3-page horizontal matrix with the persistent bottom capture bar
- * and asynchronous dual-write engine (SQLite + Logseq Markdown).
+ * Orchestrates the 3-page horizontal matrix with snap-to-page physics,
+ * persistent bottom capture bar, and asynchronous dual-write engine.
  */
 public class MainActivity extends Activity {
 
     private TaktoDbHelper dbHelper;
-    private HorizontalScrollView horizontalPager;
+    private SnappingHorizontalScrollView horizontalPager;
     private LinearLayout pagesContainer;
     private MetroDashboardView metroView;
     private InternalThreadView threadView;
@@ -78,10 +78,9 @@ public class MainActivity extends Activity {
         contentVertical.addView(tabRow, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        // 4. Horizontal Scroll Pager
-        horizontalPager = new HorizontalScrollView(this);
-        horizontalPager.setHorizontalScrollBarEnabled(false);
-        horizontalPager.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        // 4. Snapping Horizontal Scroll Pager
+        horizontalPager = new SnappingHorizontalScrollView(this);
+        horizontalPager.setPageMetrics(screenWidth, 3);
 
         pagesContainer = new LinearLayout(this);
         pagesContainer.setOrientation(LinearLayout.HORIZONTAL);
@@ -118,12 +117,12 @@ public class MainActivity extends Activity {
         // 6. Wire Events & Listeners
         wireEventListeners();
 
-        // 7. Scroll to Center Page (Internal Thread) after initial layout pass
+        // 7. Snap to Center Page (Internal Thread) after initial layout
         horizontalPager.post(new Runnable() {
             @Override
             public void run() {
                 updatePageDimensions();
-                horizontalPager.scrollTo(screenWidth, 0);
+                horizontalPager.snapToPage(1, false);
                 highlightTab(1);
             }
         });
@@ -139,7 +138,7 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 updatePageDimensions();
-                horizontalPager.scrollTo(currentPage * screenWidth, 0);
+                horizontalPager.snapToPage(currentPage, false);
             }
         });
     }
@@ -147,6 +146,7 @@ public class MainActivity extends Activity {
     private void updatePageDimensions() {
         DisplayMetrics dm = getResources().getDisplayMetrics();
         screenWidth = dm.widthPixels;
+        horizontalPager.setPageMetrics(screenWidth, 3);
 
         for (int i = 0; i < pagesContainer.getChildCount(); i++) {
             View child = pagesContainer.getChildAt(i);
@@ -198,7 +198,7 @@ public class MainActivity extends Activity {
 
     private void smoothScrollToPage(int page) {
         currentPage = page;
-        horizontalPager.smoothScrollTo(page * screenWidth, 0);
+        horizontalPager.snapToPage(page, true);
         highlightTab(page);
     }
 
@@ -210,29 +210,83 @@ public class MainActivity extends Activity {
     }
 
     private void wireEventListeners() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            horizontalPager.setOnScrollChangeListener(new View.OnScrollChangeListener() {
-                @Override
-                public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
-                    int page = (scrollX + screenWidth / 2) / Math.max(1, screenWidth);
-                    if (page != currentPage) {
-                        highlightTab(page);
-                    }
-                }
-            });
-        }
+        // Page snap listener
+        horizontalPager.setOnPageChangeListener(new SnappingHorizontalScrollView.OnPageChangeListener() {
+            @Override
+            public void onPageSelected(int pageIndex) {
+                highlightTab(pageIndex);
+            }
+        });
 
-        // Dual-Write Task Toggle Listener: Updates both SQLite and Logseq file off main thread
+        // Task toggle & delete in MetroDashboardView
         metroView.setOnTaskActionListener(new MetroDashboardView.OnTaskActionListener() {
             @Override
             public void onTaskToggled(final long taskId, final String content, final boolean isDone) {
                 AppExecutors.getInstance().diskIO().execute(new Runnable() {
                     @Override
                     public void run() {
-                        // 1. Update SQLite
                         dbHelper.toggleTaskStatus(taskId, isDone);
-                        // 2. Update Logseq Markdown file
                         LogseqSync.updateTaskStatus(MainActivity.this, content, isDone);
+
+                        AppExecutors.getInstance().mainThread().execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                triggerHaptic();
+                                refreshAllViews();
+                            }
+                        });
+                    }
+                });
+            }
+
+            @Override
+            public void onTaskDeleted(final long taskId, final String content) {
+                AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        dbHelper.deleteEntry(taskId);
+                        LogseqSync.deleteEntry(MainActivity.this, content);
+
+                        AppExecutors.getInstance().mainThread().execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                triggerHaptic();
+                                refreshAllViews();
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
+        // Task toggle & delete in InternalThreadView
+        threadView.setOnThreadActionListener(new InternalThreadView.OnThreadActionListener() {
+            @Override
+            public void onTaskToggled(final long taskId, final String content, final boolean isDone) {
+                AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        dbHelper.toggleTaskStatus(taskId, isDone);
+                        LogseqSync.updateTaskStatus(MainActivity.this, content, isDone);
+
+                        AppExecutors.getInstance().mainThread().execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                triggerHaptic();
+                                refreshAllViews();
+                            }
+                        });
+                    }
+                });
+            }
+
+            @Override
+            public void onEntryDeleted(final long entryId, final String type, final String content) {
+                AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        dbHelper.deleteEntry(entryId);
+                        LogseqSync.deleteEntry(MainActivity.this, content);
 
                         AppExecutors.getInstance().mainThread().execute(new Runnable() {
                             @Override
@@ -253,12 +307,9 @@ public class MainActivity extends Activity {
                 AppExecutors.getInstance().diskIO().execute(new Runnable() {
                     @Override
                     public void run() {
-                        // 1. Insert into SQLite
                         String status = "task".equalsIgnoreCase(type) ? "todo" : "logged";
                         long timestamp = System.currentTimeMillis();
                         dbHelper.insertEntry(type, content, status);
-
-                        // 2. Dual-Write to Logseq Markdown
                         LogseqSync.appendEntry(MainActivity.this, type, content, status, timestamp);
 
                         AppExecutors.getInstance().mainThread().execute(new Runnable() {

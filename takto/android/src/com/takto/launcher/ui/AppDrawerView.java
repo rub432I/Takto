@@ -1,17 +1,24 @@
 package com.takto.launcher.ui;
 
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
+import android.provider.Settings;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -25,7 +32,7 @@ import java.util.Locale;
 
 /**
  * AppDrawerView: Right page application registry & fast launcher.
- * Loads apps asynchronously off the main thread and reacts to package change events.
+ * Asynchronously loads apps and icons, filters in real time, and provides long-press management actions.
  */
 public class AppDrawerView extends LinearLayout {
 
@@ -33,6 +40,7 @@ public class AppDrawerView extends LinearLayout {
         public String label;
         public String packageName;
         public String activityName;
+        public Drawable icon;
     }
 
     private final List<AppEntry> allApps = new ArrayList<>();
@@ -59,14 +67,14 @@ public class AppDrawerView extends LinearLayout {
         Context ctx = getContext();
         setOrientation(VERTICAL);
         setBackgroundColor(Color.BLACK);
-        setPadding(UiUtils.dpToPx(ctx, 20), UiUtils.dpToPx(ctx, 16), UiUtils.dpToPx(ctx, 20), UiUtils.dpToPx(ctx, 90));
+        setPadding(UiUtils.dpToPx(ctx, 16), UiUtils.dpToPx(ctx, 14), UiUtils.dpToPx(ctx, 16), UiUtils.dpToPx(ctx, 90));
 
         TextView header = new TextView(ctx);
         header.setText("// APPLICATION REGISTRY");
         header.setTextSize(10);
         header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         header.setTextColor(Color.parseColor("#DF9E38"));
-        header.setPadding(0, 0, 0, UiUtils.dpToPx(ctx, 12));
+        header.setPadding(0, 0, 0, UiUtils.dpToPx(ctx, 10));
         addView(header);
 
         listView = new ListView(ctx);
@@ -101,6 +109,10 @@ public class AppDrawerView extends LinearLayout {
                     entry.label = info.loadLabel(pm).toString();
                     entry.packageName = info.activityInfo.packageName;
                     entry.activityName = info.activityInfo.name;
+                    try {
+                        entry.icon = info.loadIcon(pm);
+                    } catch (Exception ignored) {
+                    }
                     loaded.add(entry);
                 }
 
@@ -174,6 +186,32 @@ public class AppDrawerView extends LinearLayout {
         return null;
     }
 
+    private void showAppActionDialog(final AppEntry app) {
+        CharSequence[] options = new CharSequence[]{"Launch", "App Info", "Uninstall"};
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), AlertDialog.THEME_DEVICE_DEFAULT_DARK);
+        builder.setTitle(app.label);
+        builder.setItems(options, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                if (which == 0) {
+                    Intent launchIntent = getContext().getPackageManager().getLaunchIntentForPackage(app.packageName);
+                    if (launchIntent != null) {
+                        getContext().startActivity(launchIntent);
+                    }
+                } else if (which == 1) {
+                    Intent infoIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    infoIntent.setData(Uri.parse("package:" + app.packageName));
+                    getContext().startActivity(infoIntent);
+                } else if (which == 2) {
+                    Intent deleteIntent = new Intent(Intent.ACTION_DELETE);
+                    deleteIntent.setData(Uri.parse("package:" + app.packageName));
+                    getContext().startActivity(deleteIntent);
+                }
+            }
+        });
+        builder.show();
+    }
+
     private class AppListAdapter extends BaseAdapter {
         @Override
         public int getCount() { return filteredApps.size(); }
@@ -184,21 +222,47 @@ public class AppDrawerView extends LinearLayout {
 
         @Override
         public View getView(int pos, View convertView, ViewGroup parent) {
-            TextView tv = (TextView) convertView;
             Context ctx = getContext();
-            if (tv == null) {
-                tv = new TextView(ctx);
+            ViewHolder holder;
+
+            if (convertView == null) {
+                LinearLayout row = new LinearLayout(ctx);
+                row.setOrientation(HORIZONTAL);
+                row.setGravity(Gravity.CENTER_VERTICAL);
+                row.setPadding(UiUtils.dpToPx(ctx, 14), UiUtils.dpToPx(ctx, 10), UiUtils.dpToPx(ctx, 14), UiUtils.dpToPx(ctx, 10));
+                row.setBackground(createItemDrawable());
+
+                ImageView iconView = new ImageView(ctx);
+                int iconSize = UiUtils.dpToPx(ctx, 32);
+                LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(iconSize, iconSize);
+                iconParams.setMargins(0, 0, UiUtils.dpToPx(ctx, 14), 0);
+                row.addView(iconView, iconParams);
+
+                TextView tv = new TextView(ctx);
                 tv.setTextSize(12);
                 tv.setTypeface(Typeface.MONOSPACE);
                 tv.setTextColor(Color.WHITE);
-                tv.setPadding(UiUtils.dpToPx(ctx, 16), UiUtils.dpToPx(ctx, 14), UiUtils.dpToPx(ctx, 16), UiUtils.dpToPx(ctx, 14));
-                tv.setBackground(createItemDrawable());
+                row.addView(tv, new LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1.0f));
+
+                holder = new ViewHolder();
+                holder.iconView = iconView;
+                holder.labelView = tv;
+                row.setTag(holder);
+                convertView = row;
+            } else {
+                holder = (ViewHolder) convertView.getTag();
             }
 
             final AppEntry app = filteredApps.get(pos);
-            tv.setText(app.label);
+            holder.labelView.setText(app.label);
+            if (app.icon != null) {
+                holder.iconView.setImageDrawable(app.icon);
+                holder.iconView.setVisibility(View.VISIBLE);
+            } else {
+                holder.iconView.setVisibility(View.GONE);
+            }
 
-            tv.setOnClickListener(new OnClickListener() {
+            convertView.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     Intent launchIntent = getContext().getPackageManager().getLaunchIntentForPackage(app.packageName);
@@ -208,7 +272,20 @@ public class AppDrawerView extends LinearLayout {
                 }
             });
 
-            return tv;
+            convertView.setOnLongClickListener(new OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    showAppActionDialog(app);
+                    return true;
+                }
+            });
+
+            return convertView;
         }
+    }
+
+    private static class ViewHolder {
+        ImageView iconView;
+        TextView labelView;
     }
 }
