@@ -72,6 +72,12 @@ apksigner sign --ks "$KEYSTORE" \
     --out "$BUILD_DIR/Takto-debug.apk" \
     "$BUILD_DIR/unaligned.apk"
 
+# 9. Auto-Export to Android Download directory if accessible
+if [ -d "/storage/emulated/0/Download" ]; then
+    cp -f "$BUILD_DIR/Takto-debug.apk" "/storage/emulated/0/Download/Takto-debug.apk"
+    echo "[+] Exported signed APK to /storage/emulated/0/Download/Takto-debug.apk"
+fi
+
 echo "================================================================="
 echo "✅ BUILD SUCCESSFUL!"
 echo "APK Location: $BUILD_DIR/Takto-debug.apk"
