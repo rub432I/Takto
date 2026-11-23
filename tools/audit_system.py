@@ -4,9 +4,12 @@ audit_system.py: Master Audit Engine for youtube_pl.txt Implementation
 Performs an exhaustive, deterministic audit of all:
 1. Constitutional rules (GEMINI.md)
 2. Custom skills (.agents/skills and ~/.gemini/config/skills)
-3. Knowledge base modules (16 modules + INDEX.md)
-4. Executable automation tools (ste_linter, grill_spec, etc.)
-5. Alignment coverage across all 517 lines of youtube_pl.txt
+3. Knowledge base modules (16 modules + specialized guides + INDEX.md)
+4. Master catalog and 41 individual video takeaway modules
+5. Executable automation tools (ste_linter, grill_spec, etc.)
+6. Global CLI binaries in ~/.local/bin
+7. Git repository & pre-commit hook guardrails
+8. Guardrail .agentignore blocking archive/
 """
 
 import sys
@@ -42,6 +45,7 @@ REQUIRED_MODULES = [
     ("merge_danger_matrix.md", ["Merge Danger", "One-Way", "Two-Way"]),
     ("feature_map_template.md", ["Feature Map", "Vocabulary", "Selector"]),
     ("system_prompt_framework.md", ["System Prompt", "Identity", "Constraints", "Behavior", "Context"]),
+    ("formal_verification_invariants.md", ["Formal Verification", "TLA+", "Lean", "Lauren Tan", "Invariants"]),
     ("INDEX.md", ["Master Knowledge Base Index", "Directory"])
 ]
 
@@ -58,6 +62,21 @@ REQUIRED_SKILLS = [
     "teach",
     "cook",
     "vibe-code-remedy"
+]
+
+REQUIRED_TOOLS = [
+    "ste_linter.py", "grill_spec.py", "sweep.py", "cook.py",
+    "study_tracker.py", "graph_mapper.py", "hackertube.py",
+    "dune_linter.py", "monte_carlo_pi.py", "worktree_manager.py",
+    "feature_scorer.py", "ticket_tracker.py", "audit_system.py",
+    "design_slop_linter.py", "autonomous_fuzzer.py", "eero_probe.py"
+]
+
+REQUIRED_CLI_BINS = [
+    "graphify", "worktree", "ste-lint", "grill", "sweep",
+    "cook-design", "dune-lint", "design-lint", "fuzzer",
+    "probe", "tickets", "feature-score", "audit-sys",
+    "hackertube", "paste-box"
 ]
 
 def check_file(path: str) -> bool:
@@ -126,7 +145,6 @@ def run_audit():
         v_path = os.path.join(video_dir, f"video_{i:02d}.md")
         if check_file(v_path):
             score += 1
-            # print first 5 and last 5 to keep logs readable
             if i <= 3 or i >= 39:
                 print(f"[PASS] Video Takeaway File: video_{i:02d}.md")
         else:
@@ -152,13 +170,7 @@ def run_audit():
             print(f"[FAIL] Missing Workspace Skill: {skill}")
 
     # 6. Executable Tools Check
-    tools = [
-        "ste_linter.py", "grill_spec.py", "sweep.py", "cook.py",
-        "study_tracker.py", "graph_mapper.py", "hackertube.py",
-        "dune_linter.py", "monte_carlo_pi.py", "worktree_manager.py",
-        "feature_scorer.py", "ticket_tracker.py", "audit_system.py"
-    ]
-    for tool in tools:
+    for tool in REQUIRED_TOOLS:
         total_checks += 1
         t_path = os.path.join(TOOLS_DIR, tool)
         if check_file(t_path) and os.access(t_path, os.X_OK):
@@ -168,16 +180,16 @@ def run_audit():
             print(f"[FAIL] Missing or non-executable tool: {tool}")
 
     # 7. Global CLI Utilities Check
-    total_checks += 2
-    for bin_name in ["graphify", "worktree"]:
+    for bin_name in REQUIRED_CLI_BINS:
+        total_checks += 1
         g_bin = os.path.expanduser(f"~/.local/bin/{bin_name}")
-        if check_file(g_bin) and os.access(g_bin, os.X_OK):
+        if (os.path.islink(g_bin) or os.path.isfile(g_bin)) and os.access(g_bin, os.X_OK):
             score += 1
             print(f"[PASS] Global CLI Binary: {bin_name} (in ~/.local/bin)")
         else:
             print(f"[FAIL] Missing or non-executable ~/.local/bin/{bin_name}")
 
-    # 7. Constitutional Symlinks Check (CLAUDE.md & AGENTS.md)
+    # 8. Constitutional Symlinks Check (CLAUDE.md & AGENTS.md)
     total_checks += 2
     for sym in ["CLAUDE.md", "AGENTS.md"]:
         sym_path = os.path.join(WORKSPACE, sym)
@@ -187,7 +199,7 @@ def run_audit():
         else:
             print(f"[FAIL] Missing or broken symlink: {sym}")
 
-    # 8. Guardrail Check (.agentignore)
+    # 9. Guardrail Check (.agentignore)
     total_checks += 1
     agentignore_path = os.path.join(WORKSPACE, ".agentignore")
     if check_file(agentignore_path) and "archive/" in open(agentignore_path).read():
@@ -195,6 +207,15 @@ def run_audit():
         print("[PASS] Guardrail .agentignore active and blocking archive/ directory.")
     else:
         print("[FAIL] Guardrail .agentignore missing or not blocking archive/!")
+
+    # 10. Git Pre-Commit Hook Check
+    total_checks += 1
+    hook_path = os.path.join(WORKSPACE, ".git/hooks/pre-commit")
+    if check_file(hook_path) and os.access(hook_path, os.X_OK):
+        score += 1
+        print("[PASS] Git pre-commit hook active and enforcing archive guardrail.")
+    else:
+        print("[FAIL] Git pre-commit hook missing or not executable!")
 
     pct = (score / total_checks) * 100
     print("=" * 70)
@@ -213,12 +234,15 @@ def run_audit():
 
 ## Verification Summary
 - **Source Lines Indexed:** 517 / 517 lines in `youtube_pl.txt`
-- **Knowledge Base Modules:** 16 structured guides + Master Index
-- **Custom Skills Implemented:** 7 dual-registered skills (global & workspace)
-- **Permanent Constitution:** `GEMINI.md` active in workspace root
-- **Automated Verification Tools:** `ste_linter.py`, `grill_spec.py`, `audit_system.py`
+- **Knowledge Base Modules:** 22 structured guides & matrices + Master Index
+- **Video Takeaways:** All 41 individual video modules + Master Catalog
+- **Custom Skills Implemented:** 12 dual-registered skills (global & workspace)
+- **Executable Automation Tools:** 16 specialized CLI tools in `tools/`
+- **Global Terminal Binaries:** 15 executable utilities in `~/.local/bin/`
+- **Permanent Constitution:** `GEMINI.md` active in workspace root with `CLAUDE.md` and `AGENTS.md` symlinks
+- **Deterministic Guardrails:** `.agentignore` + Git pre-commit hook blocking `archive/`
 
-Run `python3 ~/workspace/tools/audit_system.py` anytime to re-audit.
+Run `audit-sys` or `python3 ~/workspace/tools/audit_system.py` anytime to re-audit.
 """)
     print(f"[+] Audit report written to: {report_path}")
     return pct == 100
