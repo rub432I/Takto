@@ -14,6 +14,7 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.provider.Settings;
+import android.util.LruCache;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,7 +33,8 @@ import java.util.Locale;
 
 /**
  * AppDrawerView: Right page application registry & fast launcher.
- * Asynchronously loads apps and icons, filters in real time, and provides long-press management actions.
+ * Features asynchronous manifest discovery on appScanner executor,
+ * lazy LRU icon decoding, real-time filtering, and long-press management actions.
  */
 public class AppDrawerView extends LinearLayout {
 
@@ -40,17 +42,18 @@ public class AppDrawerView extends LinearLayout {
         public String label;
         public String packageName;
         public String activityName;
-        public Drawable icon;
     }
 
     private final List<AppEntry> allApps = new ArrayList<>();
     private final List<AppEntry> filteredApps = new ArrayList<>();
+    private final LruCache<String, Drawable> iconCache;
     private ListView listView;
     private AppListAdapter adapter;
     private BroadcastReceiver packageReceiver;
 
     public AppDrawerView(Context context) {
         super(context);
+        this.iconCache = new LruCache<String, Drawable>(64);
         init();
     }
 
@@ -91,7 +94,8 @@ public class AppDrawerView extends LinearLayout {
     }
 
     public void reloadApps() {
-        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+        // Runs on separate appScanner executor to prevent blocking SQLite/file sync
+        AppExecutors.getInstance().appScanner().execute(new Runnable() {
             @Override
             public void run() {
                 PackageManager pm = getContext().getPackageManager();
@@ -109,10 +113,6 @@ public class AppDrawerView extends LinearLayout {
                     entry.label = info.loadLabel(pm).toString();
                     entry.packageName = info.activityInfo.packageName;
                     entry.activityName = info.activityInfo.name;
-                    try {
-                        entry.icon = info.loadIcon(pm);
-                    } catch (Exception ignored) {
-                    }
                     loaded.add(entry);
                 }
 
@@ -139,6 +139,7 @@ public class AppDrawerView extends LinearLayout {
         packageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
+                iconCache.evictAll();
                 reloadApps();
             }
         };
@@ -223,7 +224,7 @@ public class AppDrawerView extends LinearLayout {
         @Override
         public View getView(int pos, View convertView, ViewGroup parent) {
             Context ctx = getContext();
-            ViewHolder holder;
+            final ViewHolder holder;
 
             if (convertView == null) {
                 LinearLayout row = new LinearLayout(ctx);
@@ -255,11 +256,36 @@ public class AppDrawerView extends LinearLayout {
 
             final AppEntry app = filteredApps.get(pos);
             holder.labelView.setText(app.label);
-            if (app.icon != null) {
-                holder.iconView.setImageDrawable(app.icon);
+            holder.iconView.setTag(app.packageName);
+
+            // Lazy icon loading via LRU cache and appScanner executor
+            Drawable cached = iconCache.get(app.packageName);
+            if (cached != null) {
+                holder.iconView.setImageDrawable(cached);
                 holder.iconView.setVisibility(View.VISIBLE);
             } else {
-                holder.iconView.setVisibility(View.GONE);
+                holder.iconView.setImageDrawable(null);
+                AppExecutors.getInstance().appScanner().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            PackageManager pm = getContext().getPackageManager();
+                            final Drawable icon = pm.getApplicationIcon(app.packageName);
+                            iconCache.put(app.packageName, icon);
+
+                            AppExecutors.getInstance().mainThread().execute(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (app.packageName.equals(holder.iconView.getTag())) {
+                                        holder.iconView.setImageDrawable(icon);
+                                        holder.iconView.setVisibility(View.VISIBLE);
+                                    }
+                                }
+                            });
+                        } catch (Exception ignored) {
+                        }
+                    }
+                });
             }
 
             convertView.setOnClickListener(new OnClickListener() {

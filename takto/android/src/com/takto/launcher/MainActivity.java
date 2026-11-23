@@ -6,54 +6,56 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
-import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import com.takto.launcher.db.TaktoDbHelper;
 import com.takto.launcher.ui.AppDrawerView;
 import com.takto.launcher.ui.BottomBarView;
 import com.takto.launcher.ui.InternalThreadView;
 import com.takto.launcher.ui.MetroDashboardView;
-import com.takto.launcher.ui.SnappingHorizontalScrollView;
+import com.takto.launcher.ui.TaktoPager;
 import com.takto.launcher.util.AppExecutors;
 import com.takto.launcher.util.LogseqSync;
 import com.takto.launcher.util.UiUtils;
+import java.io.File;
 
 /**
  * MainActivity: Takto Launcher Root Activity
- * Orchestrates the 3-page horizontal matrix with snap-to-page physics,
- * persistent bottom capture bar, and asynchronous dual-write engine.
+ * Connects the custom 3-page TaktoPager with persistent universal capture,
+ * SAF directory integration, and stable block UUID dual-write persistence.
  */
 public class MainActivity extends Activity {
 
+    private static final int REQUEST_CODE_SAF = 4201;
+
     private TaktoDbHelper dbHelper;
-    private SnappingHorizontalScrollView horizontalPager;
-    private LinearLayout pagesContainer;
+    private TaktoPager pager;
     private MetroDashboardView metroView;
     private InternalThreadView threadView;
     private AppDrawerView drawerView;
     private BottomBarView bottomBar;
+    private TextView storageWarningBanner;
 
     private TextView tabMetro;
     private TextView tabThread;
     private TextView tabApps;
 
-    private int screenWidth = 1080;
-    private int currentPage = 1; // Default to Center: Internal Thread
+    private int currentPage = 1; // Default: Center Thread
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 1. Edge-to-Edge Pure OLED Black
         getWindow().getDecorView().setBackgroundColor(Color.BLACK);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().setStatusBarColor(Color.BLACK);
@@ -62,10 +64,6 @@ public class MainActivity extends Activity {
 
         dbHelper = TaktoDbHelper.getInstance(this);
 
-        DisplayMetrics dm = getResources().getDisplayMetrics();
-        screenWidth = dm.widthPixels;
-
-        // 2. Root Container
         FrameLayout rootLayout = new FrameLayout(this);
         rootLayout.setBackgroundColor(Color.BLACK);
 
@@ -73,39 +71,43 @@ public class MainActivity extends Activity {
         contentVertical.setOrientation(LinearLayout.VERTICAL);
         contentVertical.setBackgroundColor(Color.BLACK);
 
-        // 3. Top Brutalist Navigation Tabs
+        // 1. Top Tabs
         LinearLayout tabRow = createTopTabIndicator();
         contentVertical.addView(tabRow, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        // 4. Snapping Horizontal Scroll Pager
-        horizontalPager = new SnappingHorizontalScrollView(this);
-        horizontalPager.setPageMetrics(screenWidth, 3);
+        // 2. Storage Status / SAF Configuration Banner
+        storageWarningBanner = new TextView(this);
+        storageWarningBanner.setTextSize(10);
+        storageWarningBanner.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        storageWarningBanner.setGravity(Gravity.CENTER);
+        storageWarningBanner.setPadding(UiUtils.dpToPx(this, 12), UiUtils.dpToPx(this, 8), UiUtils.dpToPx(this, 12), UiUtils.dpToPx(this, 8));
+        storageWarningBanner.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                requestSafDirectoryAccess();
+            }
+        });
+        contentVertical.addView(storageWarningBanner, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        pagesContainer = new LinearLayout(this);
-        pagesContainer.setOrientation(LinearLayout.HORIZONTAL);
-
+        // 3. Custom TaktoPager (Pure ViewGroup touch interception)
+        pager = new TaktoPager(this);
         metroView = new MetroDashboardView(this);
         threadView = new InternalThreadView(this);
         drawerView = new AppDrawerView(this);
 
-        LinearLayout.LayoutParams pageParams = new LinearLayout.LayoutParams(
-                screenWidth, ViewGroup.LayoutParams.MATCH_PARENT);
+        pager.addView(metroView);
+        pager.addView(threadView);
+        pager.addView(drawerView);
 
-        pagesContainer.addView(metroView, pageParams);
-        pagesContainer.addView(threadView, pageParams);
-        pagesContainer.addView(drawerView, pageParams);
-
-        horizontalPager.addView(pagesContainer, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-        contentVertical.addView(horizontalPager, new LinearLayout.LayoutParams(
+        contentVertical.addView(pager, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f));
 
         rootLayout.addView(contentVertical, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-        // 5. Bottom Universal Capture Bar
+        // 4. Bottom Universal Capture Bar
         bottomBar = new BottomBarView(this);
         FrameLayout.LayoutParams bottomParams = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -114,46 +116,61 @@ public class MainActivity extends Activity {
 
         setContentView(rootLayout);
 
-        // 6. Wire Events & Listeners
         wireEventListeners();
 
-        // 7. Snap to Center Page (Internal Thread) after initial layout
-        horizontalPager.post(new Runnable() {
+        pager.post(new Runnable() {
             @Override
             public void run() {
-                updatePageDimensions();
-                horizontalPager.snapToPage(1, false);
+                pager.snapToPage(1, false);
                 highlightTab(1);
             }
         });
 
-        // 8. Initial Data Refresh
         refreshAllViews();
+        checkStorageAccess();
+    }
+
+    private void checkStorageAccess() {
+        LogseqSync.StorageStatus status = LogseqSync.getStorageStatus(this);
+        if (status == LogseqSync.StorageStatus.APP_PRIVATE_FALLBACK) {
+            storageWarningBanner.setVisibility(View.VISIBLE);
+            storageWarningBanner.setBackgroundColor(Color.parseColor("#3D1E06"));
+            storageWarningBanner.setTextColor(Color.parseColor("#FFC86B"));
+            storageWarningBanner.setText("[!] LOGSEQ UNLINKED // TAP TO CONNECT FOLDER VIA SAF");
+        } else if (status == LogseqSync.StorageStatus.SAF_CONFIGURED) {
+            storageWarningBanner.setVisibility(View.GONE);
+        } else {
+            storageWarningBanner.setVisibility(View.GONE);
+        }
+    }
+
+    private void requestSafDirectoryAccess() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION |
+                        Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        try {
+            startActivityForResult(intent, REQUEST_CODE_SAF);
+        } catch (Exception e) {
+            Toast.makeText(this, "SAF file picker not available: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        horizontalPager.post(new Runnable() {
-            @Override
-            public void run() {
-                updatePageDimensions();
-                horizontalPager.snapToPage(currentPage, false);
-            }
-        });
-    }
-
-    private void updatePageDimensions() {
-        DisplayMetrics dm = getResources().getDisplayMetrics();
-        screenWidth = dm.widthPixels;
-        horizontalPager.setPageMetrics(screenWidth, 3);
-
-        for (int i = 0; i < pagesContainer.getChildCount(); i++) {
-            View child = pagesContainer.getChildAt(i);
-            ViewGroup.LayoutParams lp = child.getLayoutParams();
-            if (lp.width != screenWidth) {
-                lp.width = screenWidth;
-                child.setLayoutParams(lp);
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_SAF && resultCode == RESULT_OK && data != null) {
+            Uri treeUri = data.getData();
+            if (treeUri != null) {
+                try {
+                    int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+                    getContentResolver().takePersistableUriPermission(treeUri, takeFlags);
+                    LogseqSync.setPersistedSafUri(this, treeUri);
+                    Toast.makeText(this, "Logseq folder connected via SAF", Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Toast.makeText(this, "Failed taking persistable permission: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+                checkStorageAccess();
             }
         }
     }
@@ -198,7 +215,7 @@ public class MainActivity extends Activity {
 
     private void smoothScrollToPage(int page) {
         currentPage = page;
-        horizontalPager.snapToPage(page, true);
+        pager.snapToPage(page, true);
         highlightTab(page);
     }
 
@@ -210,97 +227,37 @@ public class MainActivity extends Activity {
     }
 
     private void wireEventListeners() {
-        // Page snap listener
-        horizontalPager.setOnPageChangeListener(new SnappingHorizontalScrollView.OnPageChangeListener() {
+        pager.setOnPageChangeListener(new TaktoPager.OnPageChangeListener() {
             @Override
             public void onPageSelected(int pageIndex) {
                 highlightTab(pageIndex);
             }
         });
 
-        // Task toggle & delete in MetroDashboardView
         metroView.setOnTaskActionListener(new MetroDashboardView.OnTaskActionListener() {
             @Override
             public void onTaskToggled(final long taskId, final String content, final boolean isDone) {
-                AppExecutors.getInstance().diskIO().execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        dbHelper.toggleTaskStatus(taskId, isDone);
-                        LogseqSync.updateTaskStatus(MainActivity.this, content, isDone);
-
-                        AppExecutors.getInstance().mainThread().execute(new Runnable() {
-                            @Override
-                            public void run() {
-                                triggerHaptic();
-                                refreshAllViews();
-                            }
-                        });
-                    }
-                });
+                handleTaskToggle(taskId, content, isDone);
             }
 
             @Override
             public void onTaskDeleted(final long taskId, final String content) {
-                AppExecutors.getInstance().diskIO().execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        dbHelper.deleteEntry(taskId);
-                        LogseqSync.deleteEntry(MainActivity.this, content);
-
-                        AppExecutors.getInstance().mainThread().execute(new Runnable() {
-                            @Override
-                            public void run() {
-                                triggerHaptic();
-                                refreshAllViews();
-                            }
-                        });
-                    }
-                });
+                handleEntryDelete(taskId, "task", content);
             }
         });
 
-        // Task toggle & delete in InternalThreadView
         threadView.setOnThreadActionListener(new InternalThreadView.OnThreadActionListener() {
             @Override
             public void onTaskToggled(final long taskId, final String content, final boolean isDone) {
-                AppExecutors.getInstance().diskIO().execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        dbHelper.toggleTaskStatus(taskId, isDone);
-                        LogseqSync.updateTaskStatus(MainActivity.this, content, isDone);
-
-                        AppExecutors.getInstance().mainThread().execute(new Runnable() {
-                            @Override
-                            public void run() {
-                                triggerHaptic();
-                                refreshAllViews();
-                            }
-                        });
-                    }
-                });
+                handleTaskToggle(taskId, content, isDone);
             }
 
             @Override
             public void onEntryDeleted(final long entryId, final String type, final String content) {
-                AppExecutors.getInstance().diskIO().execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        dbHelper.deleteEntry(entryId);
-                        LogseqSync.deleteEntry(MainActivity.this, content);
-
-                        AppExecutors.getInstance().mainThread().execute(new Runnable() {
-                            @Override
-                            public void run() {
-                                triggerHaptic();
-                                refreshAllViews();
-                            }
-                        });
-                    }
-                });
+                handleEntryDelete(entryId, type, content);
             }
         });
 
-        // BottomBar capture and routing listeners
         bottomBar.setOnBottomActionListener(new BottomBarView.OnBottomActionListener() {
             @Override
             public void onCaptureEntry(final String type, final String content) {
@@ -308,15 +265,21 @@ public class MainActivity extends Activity {
                     @Override
                     public void run() {
                         String status = "task".equalsIgnoreCase(type) ? "todo" : "logged";
-                        long timestamp = System.currentTimeMillis();
-                        dbHelper.insertEntry(type, content, status);
-                        LogseqSync.appendEntry(MainActivity.this, type, content, status, timestamp);
+                        TaktoDbHelper.Entry entry = dbHelper.insertEntry(type, content, status);
+
+                        File journalsDir = LogseqSync.getJournalsDirectory(MainActivity.this);
+                        File targetFile = new File(journalsDir, entry.logseqFile);
+                        final boolean fileOk = LogseqSync.appendEntryToFile(
+                                targetFile, type, content, status, entry.timestamp, entry.logseqId);
 
                         AppExecutors.getInstance().mainThread().execute(new Runnable() {
                             @Override
                             public void run() {
                                 triggerHaptic();
                                 refreshAllViews();
+                                if (!fileOk) {
+                                    Toast.makeText(MainActivity.this, "Warning: SQLite saved, Logseq write failed", Toast.LENGTH_SHORT).show();
+                                }
                                 if (currentPage == 2) {
                                     smoothScrollToPage(1);
                                 }
@@ -347,6 +310,54 @@ public class MainActivity extends Activity {
         });
     }
 
+    private void handleTaskToggle(final long taskId, final String content, final boolean isDone) {
+        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                TaktoDbHelper.Entry entry = dbHelper.getEntry(taskId);
+                dbHelper.toggleTaskStatus(taskId, isDone);
+
+                if (entry != null && entry.logseqFile != null) {
+                    File journalsDir = LogseqSync.getJournalsDirectory(MainActivity.this);
+                    File targetFile = new File(journalsDir, entry.logseqFile);
+                    LogseqSync.updateTaskStatusInFile(targetFile, entry.logseqId, content, isDone);
+                }
+
+                AppExecutors.getInstance().mainThread().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        triggerHaptic();
+                        refreshAllViews();
+                    }
+                });
+            }
+        });
+    }
+
+    private void handleEntryDelete(final long entryId, final String type, final String content) {
+        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                TaktoDbHelper.Entry entry = dbHelper.getEntry(entryId);
+                dbHelper.deleteEntry(entryId);
+
+                if (entry != null && entry.logseqFile != null) {
+                    File journalsDir = LogseqSync.getJournalsDirectory(MainActivity.this);
+                    File targetFile = new File(journalsDir, entry.logseqFile);
+                    LogseqSync.deleteEntryFromFile(targetFile, entry.logseqId, content);
+                }
+
+                AppExecutors.getInstance().mainThread().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        triggerHaptic();
+                        refreshAllViews();
+                    }
+                });
+            }
+        });
+    }
+
     private void refreshAllViews() {
         metroView.refreshData(dbHelper);
         threadView.refreshData(dbHelper);
@@ -370,6 +381,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         refreshAllViews();
+        checkStorageAccess();
     }
 
     @Override

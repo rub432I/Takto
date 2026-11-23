@@ -2,12 +2,16 @@
 # test_takto.sh: Deterministic Java Unit Test Runner for Takto
 set -e
 
-WORKSPACE="/data/data/com.termux/files/home/workspace/takto"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+WORKSPACE="$REPO_ROOT/takto"
 ANDROID_JAR="${ANDROID_JAR:-$HOME/.local/opt/android-sdk/platforms/android-34/android.jar}"
-TMP_TEST_DIR="/data/data/com.termux/files/usr/tmp/takto_test_classes"
+TMP_TEST_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t 'takto_test_classes')"
 
-rm -rf "$TMP_TEST_DIR"
-mkdir -p "$TMP_TEST_DIR"
+cleanup() {
+    rm -rf "$TMP_TEST_DIR"
+}
+trap cleanup EXIT
 
 echo "================================================================="
 echo "COMPILING AND RUNNING TAKTO ENGINE DETERMINISTIC TESTS"
@@ -20,5 +24,3 @@ javac -source 8 -target 8 \
     $(find "$WORKSPACE/android/src" "$WORKSPACE/android/tests" -name "*.java")
 
 java -cp "$ANDROID_JAR:$TMP_TEST_DIR" com.takto.launcher.TaktoEngineTest
-
-rm -rf "$TMP_TEST_DIR"

@@ -5,20 +5,24 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Takto Local Dual-Write Database Helper
- * Offline-first SQLite persistence with non-destructive schema migrations and indexed queries.
+ * Offline-first SQLite persistence with stable Logseq block UUIDs and non-destructive schema migrations.
  */
 public class TaktoDbHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "takto.db";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3;
 
     public static final String TABLE_ENTRIES = "entries";
     public static final String COL_ID = "id";
@@ -27,8 +31,11 @@ public class TaktoDbHelper extends SQLiteOpenHelper {
     public static final String COL_TIMESTAMP = "timestamp";         // epoch millis
     public static final String COL_STATUS = "status";               // todo, done, logged
     public static final String COL_NUMERIC_VALUE = "numeric_value"; // parsed expense amount
+    public static final String COL_LOGSEQ_FILE = "logseq_file";     // journal file name (e.g. 2026_11_23.md)
+    public static final String COL_LOGSEQ_ID = "logseq_id";         // stable Logseq block UUID
 
     private static final Pattern EXPENSE_PATTERN = Pattern.compile("[-+]?\\s*[$€£¥]?\\s*([0-9]+(?:,[0-9]{3})*(?:\\.[0-9]+)?|[0-9]+(?:\\.[0-9]+)?)");
+    private static final SimpleDateFormat FILE_DATE_FORMAT = new SimpleDateFormat("yyyy_MM_dd", Locale.US);
 
     public static class Entry {
         public long id;
@@ -37,14 +44,18 @@ public class TaktoDbHelper extends SQLiteOpenHelper {
         public long timestamp;
         public String status;
         public double numericValue;
+        public String logseqFile;
+        public String logseqId;
 
-        public Entry(long id, String type, String content, long timestamp, String status, double numericValue) {
+        public Entry(long id, String type, String content, long timestamp, String status, double numericValue, String logseqFile, String logseqId) {
             this.id = id;
             this.type = type;
             this.content = content;
             this.timestamp = timestamp;
             this.status = status;
             this.numericValue = numericValue;
+            this.logseqFile = logseqFile;
+            this.logseqId = logseqId;
         }
 
         public boolean isTask() {
@@ -84,7 +95,9 @@ public class TaktoDbHelper extends SQLiteOpenHelper {
                 COL_CONTENT + " TEXT NOT NULL, " +
                 COL_TIMESTAMP + " INTEGER NOT NULL, " +
                 COL_STATUS + " TEXT NOT NULL, " +
-                COL_NUMERIC_VALUE + " REAL DEFAULT 0" +
+                COL_NUMERIC_VALUE + " REAL DEFAULT 0, " +
+                COL_LOGSEQ_FILE + " TEXT, " +
+                COL_LOGSEQ_ID + " TEXT" +
                 ");";
         db.execSQL(createSql);
         createIndexes(db);
@@ -93,30 +106,20 @@ public class TaktoDbHelper extends SQLiteOpenHelper {
     private void createIndexes(SQLiteDatabase db) {
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_entries_timestamp ON " + TABLE_ENTRIES + " (" + COL_TIMESTAMP + ");");
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_entries_type_status ON " + TABLE_ENTRIES + " (" + COL_TYPE + ", " + COL_STATUS + ");");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_entries_logseq_id ON " + TABLE_ENTRIES + " (" + COL_LOGSEQ_ID + ");");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Non-destructive schema migrations: Never drop tables containing user data
         if (oldVersion < 2) {
             db.execSQL("ALTER TABLE " + TABLE_ENTRIES + " ADD COLUMN " + COL_NUMERIC_VALUE + " REAL DEFAULT 0;");
-            createIndexes(db);
-            populateLegacyNumericValues(db);
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_entries_timestamp ON " + TABLE_ENTRIES + " (" + COL_TIMESTAMP + ");");
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_entries_type_status ON " + TABLE_ENTRIES + " (" + COL_TYPE + ", " + COL_STATUS + ");");
         }
-    }
-
-    private void populateLegacyNumericValues(SQLiteDatabase db) {
-        Cursor c = db.query(TABLE_ENTRIES, new String[]{COL_ID, COL_CONTENT}, COL_TYPE + " = ?", new String[]{"expense"}, null, null, null);
-        if (c != null) {
-            while (c.moveToNext()) {
-                long id = c.getLong(0);
-                String content = c.getString(1);
-                double val = parseExpenseAmount(content);
-                ContentValues cv = new ContentValues();
-                cv.put(COL_NUMERIC_VALUE, val);
-                db.update(TABLE_ENTRIES, cv, COL_ID + " = ?", new String[]{String.valueOf(id)});
-            }
-            c.close();
+        if (oldVersion < 3) {
+            db.execSQL("ALTER TABLE " + TABLE_ENTRIES + " ADD COLUMN " + COL_LOGSEQ_FILE + " TEXT;");
+            db.execSQL("ALTER TABLE " + TABLE_ENTRIES + " ADD COLUMN " + COL_LOGSEQ_ID + " TEXT;");
+            db.execSQL("CREATE INDEX IF NOT EXISTS idx_entries_logseq_id ON " + TABLE_ENTRIES + " (" + COL_LOGSEQ_ID + ");");
         }
     }
 
@@ -140,21 +143,27 @@ public class TaktoDbHelper extends SQLiteOpenHelper {
         return 0.0;
     }
 
-    public long insertEntry(String type, String content, String status) {
-        SQLiteDatabase db = getWritableDatabase();
-        ContentValues cv = new ContentValues();
-        cv.put(COL_TYPE, type);
-        cv.put(COL_CONTENT, content);
-        cv.put(COL_TIMESTAMP, System.currentTimeMillis());
-        cv.put(COL_STATUS, status);
-
+    public Entry insertEntry(String type, String content, String status) {
+        long timestamp = System.currentTimeMillis();
+        String logseqFile = FILE_DATE_FORMAT.format(new Date(timestamp)) + ".md";
+        String logseqId = UUID.randomUUID().toString();
         double numVal = 0.0;
         if ("expense".equalsIgnoreCase(type)) {
             numVal = parseExpenseAmount(content);
         }
-        cv.put(COL_NUMERIC_VALUE, numVal);
 
-        return db.insert(TABLE_ENTRIES, null, cv);
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(COL_TYPE, type);
+        cv.put(COL_CONTENT, content);
+        cv.put(COL_TIMESTAMP, timestamp);
+        cv.put(COL_STATUS, status);
+        cv.put(COL_NUMERIC_VALUE, numVal);
+        cv.put(COL_LOGSEQ_FILE, logseqFile);
+        cv.put(COL_LOGSEQ_ID, logseqId);
+
+        long id = db.insert(TABLE_ENTRIES, null, cv);
+        return new Entry(id, type, content, timestamp, status, numVal, logseqFile, logseqId);
     }
 
     public void toggleTaskStatus(long id, boolean isDone) {
@@ -188,12 +197,26 @@ public class TaktoDbHelper extends SQLiteOpenHelper {
         String content = cursor.getString(cursor.getColumnIndexOrThrow(COL_CONTENT));
         long timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(COL_TIMESTAMP));
         String status = cursor.getString(cursor.getColumnIndexOrThrow(COL_STATUS));
+
         double numericValue = 0.0;
         int numIdx = cursor.getColumnIndex(COL_NUMERIC_VALUE);
         if (numIdx != -1 && !cursor.isNull(numIdx)) {
             numericValue = cursor.getDouble(numIdx);
         }
-        return new Entry(id, type, content, timestamp, status, numericValue);
+
+        String logseqFile = null;
+        int fileIdx = cursor.getColumnIndex(COL_LOGSEQ_FILE);
+        if (fileIdx != -1 && !cursor.isNull(fileIdx)) {
+            logseqFile = cursor.getString(fileIdx);
+        }
+
+        String logseqId = null;
+        int idIdx = cursor.getColumnIndex(COL_LOGSEQ_ID);
+        if (idIdx != -1 && !cursor.isNull(idIdx)) {
+            logseqId = cursor.getString(idIdx);
+        }
+
+        return new Entry(id, type, content, timestamp, status, numericValue, logseqFile, logseqId);
     }
 
     private long getStartOfDay() {
@@ -247,28 +270,24 @@ public class TaktoDbHelper extends SQLiteOpenHelper {
         String startStr = String.valueOf(startOfDay);
         SQLiteDatabase db = getReadableDatabase();
 
-        // 1. Note count
         Cursor c1 = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_ENTRIES + " WHERE " + COL_TIMESTAMP + " >= ? AND " + COL_TYPE + " = 'journal'", new String[]{startStr});
         if (c1 != null) {
             if (c1.moveToFirst()) stats.noteCount = c1.getInt(0);
             c1.close();
         }
 
-        // 2. Active tasks count
         Cursor c2 = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_ENTRIES + " WHERE " + COL_TIMESTAMP + " >= ? AND " + COL_TYPE + " = 'task' AND " + COL_STATUS + " = 'todo'", new String[]{startStr});
         if (c2 != null) {
             if (c2.moveToFirst()) stats.activeTaskCount = c2.getInt(0);
             c2.close();
         }
 
-        // 3. Completed tasks count
         Cursor c3 = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_ENTRIES + " WHERE " + COL_TIMESTAMP + " >= ? AND " + COL_TYPE + " = 'task' AND " + COL_STATUS + " = 'done'", new String[]{startStr});
         if (c3 != null) {
             if (c3.moveToFirst()) stats.completedTaskCount = c3.getInt(0);
             c3.close();
         }
 
-        // 4. Expense sum
         Cursor c4 = db.rawQuery("SELECT SUM(" + COL_NUMERIC_VALUE + ") FROM " + TABLE_ENTRIES + " WHERE " + COL_TIMESTAMP + " >= ? AND " + COL_TYPE + " = 'expense'", new String[]{startStr});
         if (c4 != null) {
             if (c4.moveToFirst() && !c4.isNull(0)) stats.expenseTotal = c4.getDouble(0);
