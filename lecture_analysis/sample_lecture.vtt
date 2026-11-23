@@ -1,0 +1,16 @@
+WEBVTT
+
+00:00:01.000 --> 00:00:15.000
+Good morning class, welcome to Computer Science 201: Data Structures and Algorithms. Today we will focus on Graph Theory, specifically Dijkstra's algorithm for finding the single-source shortest path.
+
+00:00:15.500 --> 00:00:30.000
+Let's first review what a weighted directed graph is. A graph consists of a set of vertices V and a set of edges E. Each edge has a non-negative weight representing distance or cost.
+
+00:00:30.500 --> 00:00:50.000
+Dijkstra's algorithm relies on a greedy strategy. We maintain a priority queue of vertices ordered by their currently known tentative distance from the source. At each step, we extract the vertex with the minimum distance.
+
+00:00:50.500 --> 00:01:10.000
+Now, why must edge weights be non-negative? Can anyone answer that? Yes, Sarah in the second row. Sarah asks: what happens if there are negative weights? Excellent question. If negative weights exist, Dijkstra's greedy assumption breaks down, and we must use the Bellman-Ford algorithm instead.
+
+00:01:10.500 --> 00:01:30.000
+Regarding time complexity: with a standard binary min-heap, Dijkstra's algorithm runs in O((V + E) log V) time. If you implement it with a Fibonacci heap, you can achieve O(E + V log V). Remember this for the midterm exam.

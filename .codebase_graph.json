@@ -1,0 +1,104 @@
+{
+  "ste_linter.py": {
+    "imports": [
+      "sys",
+      "os",
+      "re",
+      "argparse"
+    ],
+    "functions": [
+      "lint_text",
+      "main"
+    ],
+    "classes": []
+  },
+  "grill_spec.py": {
+    "imports": [
+      "sys",
+      "os",
+      "argparse",
+      "datetime.datetime"
+    ],
+    "functions": [
+      "generate_adr",
+      "main"
+    ],
+    "classes": []
+  },
+  "audit_system.py": {
+    "imports": [
+      "sys",
+      "os",
+      "re"
+    ],
+    "functions": [
+      "check_file",
+      "run_audit"
+    ],
+    "classes": []
+  },
+  "sweep.py": {
+    "imports": [
+      "sys",
+      "os",
+      "shutil",
+      "argparse",
+      "datetime.datetime"
+    ],
+    "functions": [
+      "ensure_agentignore",
+      "archive_file",
+      "main"
+    ],
+    "classes": []
+  },
+  "cook.py": {
+    "imports": [
+      "sys",
+      "os",
+      "argparse",
+      "datetime.datetime"
+    ],
+    "functions": [
+      "init_cook",
+      "log_round",
+      "main"
+    ],
+    "classes": []
+  },
+  "study_tracker.py": {
+    "imports": [
+      "sys",
+      "os",
+      "json",
+      "argparse",
+      "datetime.datetime"
+    ],
+    "functions": [
+      "load_data",
+      "save_data",
+      "status",
+      "log_session",
+      "main"
+    ],
+    "classes": []
+  },
+  "graph_mapper.py": {
+    "imports": [
+      "sys",
+      "os",
+      "ast",
+      "json",
+      "argparse",
+      "typing.Dict",
+      "typing.List"
+    ],
+    "functions": [
+      "parse_python_file",
+      "map_directory",
+      "query_symbol",
+      "main"
+    ],
+    "classes": []
+  }
+}
