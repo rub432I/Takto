@@ -1,12 +1,15 @@
 package com.takto.launcher.ui;
 
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.text.format.DateFormat;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.CheckBox;
@@ -24,7 +27,7 @@ import java.util.Locale;
 
 /**
  * MetroDashboardView: Left-page live widget dashboard.
- * Displays live clock, date, aggregate daily metrics, quick launch tiles, and active tasks.
+ * Displays real-time auto-ticking clock, date, aggregate daily metrics, quick launch tiles, and active tasks.
  */
 public class MetroDashboardView extends ScrollView {
 
@@ -33,8 +36,8 @@ public class MetroDashboardView extends ScrollView {
         void onTaskDeleted(long taskId, String content);
     }
 
-    private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.US);
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE, MMMM dd, yyyy", Locale.US);
+    private SimpleDateFormat timeFormat;
 
     private TextView clockView;
     private TextView dateView;
@@ -43,6 +46,7 @@ public class MetroDashboardView extends ScrollView {
     private TextView statExpensesView;
     private LinearLayout taskContainer;
     private OnTaskActionListener taskListener;
+    private BroadcastReceiver timeTickReceiver;
 
     public MetroDashboardView(Context context) {
         super(context);
@@ -62,8 +66,14 @@ public class MetroDashboardView extends ScrollView {
         return gd;
     }
 
+    private void updateTimeFormat() {
+        boolean is24 = DateFormat.is24HourFormat(getContext());
+        timeFormat = new SimpleDateFormat(is24 ? "HH:mm" : "h:mm a", Locale.US);
+    }
+
     private void init() {
         Context ctx = getContext();
+        updateTimeFormat();
         setVerticalScrollBarEnabled(false);
         setBackgroundColor(Color.BLACK);
 
@@ -74,7 +84,7 @@ public class MetroDashboardView extends ScrollView {
         // 1. Clock & Date
         clockView = new TextView(ctx);
         clockView.setText(timeFormat.format(new Date()));
-        clockView.setTextSize(40);
+        clockView.setTextSize(38);
         clockView.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         clockView.setTextColor(Color.parseColor("#FFC86B"));
         contentLayout.addView(clockView);
@@ -155,6 +165,45 @@ public class MetroDashboardView extends ScrollView {
         addView(contentLayout);
     }
 
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        timeTickReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                updateTimeDisplay();
+            }
+        };
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_TIME_TICK);
+        filter.addAction(Intent.ACTION_TIME_CHANGED);
+        filter.addAction(Intent.ACTION_TIMEZONE_CHANGED);
+        try {
+            getContext().registerReceiver(timeTickReceiver, filter);
+        } catch (Exception ignored) {
+        }
+        updateTimeDisplay();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        if (timeTickReceiver != null) {
+            try {
+                getContext().unregisterReceiver(timeTickReceiver);
+            } catch (Exception ignored) {
+            }
+            timeTickReceiver = null;
+        }
+    }
+
+    private void updateTimeDisplay() {
+        updateTimeFormat();
+        Date now = new Date();
+        clockView.setText(timeFormat.format(now));
+        dateView.setText(dateFormat.format(now).toUpperCase(Locale.US));
+    }
+
     private TextView createStatCard(String label, String value, String colorHex) {
         Context ctx = getContext();
         TextView tv = new TextView(ctx);
@@ -192,8 +241,7 @@ public class MetroDashboardView extends ScrollView {
     }
 
     public void refreshData(final TaktoDbHelper db) {
-        clockView.setText(timeFormat.format(new Date()));
-        dateView.setText(dateFormat.format(new Date()).toUpperCase(Locale.US));
+        updateTimeDisplay();
 
         AppExecutors.getInstance().diskIO().execute(new Runnable() {
             @Override

@@ -26,13 +26,14 @@ import com.takto.launcher.ui.MetroDashboardView;
 import com.takto.launcher.ui.TaktoPager;
 import com.takto.launcher.util.AppExecutors;
 import com.takto.launcher.util.LogseqSync;
+import com.takto.launcher.util.SafStorageManager;
 import com.takto.launcher.util.UiUtils;
 import java.io.File;
 
 /**
  * MainActivity: Takto Launcher Root Activity
- * Connects the custom 3-page TaktoPager with persistent universal capture,
- * SAF directory integration, and stable block UUID dual-write persistence.
+ * Orchestrates the 3-page TaktoPager, SAF tree document persistence,
+ * and direct file storage dual-write engine.
  */
 public class MainActivity extends Activity {
 
@@ -71,7 +72,7 @@ public class MainActivity extends Activity {
         contentVertical.setOrientation(LinearLayout.VERTICAL);
         contentVertical.setBackgroundColor(Color.BLACK);
 
-        // 1. Top Tabs
+        // 1. Top Navigation Tabs
         LinearLayout tabRow = createTopTabIndicator();
         contentVertical.addView(tabRow, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -137,8 +138,6 @@ public class MainActivity extends Activity {
             storageWarningBanner.setBackgroundColor(Color.parseColor("#3D1E06"));
             storageWarningBanner.setTextColor(Color.parseColor("#FFC86B"));
             storageWarningBanner.setText("[!] LOGSEQ UNLINKED // TAP TO CONNECT FOLDER VIA SAF");
-        } else if (status == LogseqSync.StorageStatus.SAF_CONFIGURED) {
-            storageWarningBanner.setVisibility(View.GONE);
         } else {
             storageWarningBanner.setVisibility(View.GONE);
         }
@@ -267,17 +266,29 @@ public class MainActivity extends Activity {
                         String status = "task".equalsIgnoreCase(type) ? "todo" : "logged";
                         TaktoDbHelper.Entry entry = dbHelper.insertEntry(type, content, status);
 
-                        File journalsDir = LogseqSync.getJournalsDirectory(MainActivity.this);
-                        File targetFile = new File(journalsDir, entry.logseqFile);
-                        final boolean fileOk = LogseqSync.appendEntryToFile(
-                                targetFile, type, content, status, entry.timestamp, entry.logseqId);
+                        boolean fileOk = false;
+                        Uri treeUri = LogseqSync.getPersistedSafUri(MainActivity.this);
 
+                        if (treeUri != null) {
+                            Uri docUri = SafStorageManager.findOrCreateFile(
+                                    getContentResolver(), treeUri, "journals", entry.logseqFile);
+                            String block = LogseqSync.formatLogseqBlock(
+                                    type, content, status, entry.timestamp, entry.logseqId);
+                            fileOk = SafStorageManager.appendBlock(getContentResolver(), docUri, block);
+                        } else {
+                            File journalsDir = LogseqSync.getJournalsDirectory(MainActivity.this);
+                            File targetFile = new File(journalsDir, entry.logseqFile);
+                            fileOk = LogseqSync.appendEntryToFile(
+                                    targetFile, type, content, status, entry.timestamp, entry.logseqId);
+                        }
+
+                        final boolean success = fileOk;
                         AppExecutors.getInstance().mainThread().execute(new Runnable() {
                             @Override
                             public void run() {
                                 triggerHaptic();
                                 refreshAllViews();
-                                if (!fileOk) {
+                                if (!success) {
                                     Toast.makeText(MainActivity.this, "Warning: SQLite saved, Logseq write failed", Toast.LENGTH_SHORT).show();
                                 }
                                 if (currentPage == 2) {
@@ -318,9 +329,17 @@ public class MainActivity extends Activity {
                 dbHelper.toggleTaskStatus(taskId, isDone);
 
                 if (entry != null && entry.logseqFile != null) {
-                    File journalsDir = LogseqSync.getJournalsDirectory(MainActivity.this);
-                    File targetFile = new File(journalsDir, entry.logseqFile);
-                    LogseqSync.updateTaskStatusInFile(targetFile, entry.logseqId, content, isDone);
+                    Uri treeUri = LogseqSync.getPersistedSafUri(MainActivity.this);
+                    if (treeUri != null) {
+                        Uri docUri = SafStorageManager.findOrCreateFile(
+                                getContentResolver(), treeUri, "journals", entry.logseqFile);
+                        SafStorageManager.updateTaskStatus(
+                                getContentResolver(), docUri, entry.logseqId, content, isDone);
+                    } else {
+                        File journalsDir = LogseqSync.getJournalsDirectory(MainActivity.this);
+                        File targetFile = new File(journalsDir, entry.logseqFile);
+                        LogseqSync.updateTaskStatusInFile(targetFile, entry.logseqId, content, isDone);
+                    }
                 }
 
                 AppExecutors.getInstance().mainThread().execute(new Runnable() {
@@ -342,9 +361,17 @@ public class MainActivity extends Activity {
                 dbHelper.deleteEntry(entryId);
 
                 if (entry != null && entry.logseqFile != null) {
-                    File journalsDir = LogseqSync.getJournalsDirectory(MainActivity.this);
-                    File targetFile = new File(journalsDir, entry.logseqFile);
-                    LogseqSync.deleteEntryFromFile(targetFile, entry.logseqId, content);
+                    Uri treeUri = LogseqSync.getPersistedSafUri(MainActivity.this);
+                    if (treeUri != null) {
+                        Uri docUri = SafStorageManager.findOrCreateFile(
+                                getContentResolver(), treeUri, "journals", entry.logseqFile);
+                        SafStorageManager.deleteEntry(
+                                getContentResolver(), docUri, entry.logseqId, content);
+                    } else {
+                        File journalsDir = LogseqSync.getJournalsDirectory(MainActivity.this);
+                        File targetFile = new File(journalsDir, entry.logseqFile);
+                        LogseqSync.deleteEntryFromFile(targetFile, entry.logseqId, content);
+                    }
                 }
 
                 AppExecutors.getInstance().mainThread().execute(new Runnable() {

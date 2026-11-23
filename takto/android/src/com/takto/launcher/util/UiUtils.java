@@ -12,4 +12,8 @@ public class UiUtils {
         float density = context.getResources().getDisplayMetrics().density;
         return (int) (dp * density + 0.5f);
     }
+
+    public static int dpToPx(int dp) {
+        return dp;
+    }
 }
